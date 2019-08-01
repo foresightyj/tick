@@ -7,8 +7,7 @@ interface Date {
     addDays(h: number): Date;
 }
 
-interface DateConstructor
-{
-    parse(s:string):Date;
-    today():Date;
+interface DateConstructor {
+    parse(s: string): Date;
+    today(): Date;
 }

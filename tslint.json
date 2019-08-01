@@ -14,7 +14,7 @@
     "interface-name": false,
     "member-ordering":false,
     "ordered-imports": false,
-    "max-line-length": 120,
+    "max-line-length": [true, 240],
     "object-literal-sort-keys": false,
     "no-consecutive-blank-lines": false
   }

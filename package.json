@@ -21,6 +21,7 @@
   "devDependencies": {
     "@types/ip": "^1.1.0",
     "@types/jest": "^23.1.4",
+    "@types/nedb": "^1.8.8",
     "@types/pouchdb": "^6.4.0",
     "@types/pouchdb-find": "^6.3.4",
     "@vue/cli-plugin-babel": "^3.9.0",
@@ -33,6 +34,7 @@
     "electron-builder": "^21.2.0",
     "ip": "^1.1.5",
     "lodash": "^4.17.15",
+    "nedb": "^1.8.0",
     "pouchdb": "^7.1.1",
     "pouchdb-find": "^7.1.1",
     "sass": "^1.18.0",

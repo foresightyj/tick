@@ -1,32 +1,34 @@
 import assert from "assert";
 import _ from "lodash";
 import * as winston from "winston";
-import PouchDB from "pouchdb";
-import * as PouchDbFind from "pouchdb-find";
-PouchDB.plugin(PouchDbFind);
+// import PouchDB from "pouchdb";
+// import * as PouchDbFind from "pouchdb-find";
+// PouchDB.plugin(PouchDbFind);
 import Schedule from "./Schedule";
 
 const dbName = "schedules.db";
-const db = new PouchDB(dbName);
+// const db = new PouchDB(dbName);
+
+import Datastore from "nedb";
+const db = new Datastore({ filename: "./schedule2.db", autoload: true });
 
 export class Scheduler {
     private static readonly supported_events = ['initialized', 'scheduled',
         'schedule_due_time_passed', 'due', 'added', 'removed',
-        'due_updated', 'task_updated', 'attended', 'recovered', 'error'
+        'due_updated', 'task_updated', 'attended', 'recovered', 'error',
     ];
     private readonly _map: { [k: string]: NodeJS.Timeout } = {};
     private readonly _listeners: { [k: string]: Function[] } = {};
 
     private static assert_valid_event_name(event_name: string) {
-        assert(Scheduler.supported_events.indexOf(event_name) > -1, event_name + ' is not supported. try: ' + Scheduler.supported_events.join(','))
+        assert(Scheduler.supported_events.indexOf(event_name) > -1, event_name + ' is not supported. try: ' + Scheduler.supported_events.join(','));
     }
 
     private publish(event_name: string, ...args: any[]) {
         Scheduler.assert_valid_event_name(event_name);
         try {
             const listeners = this._listeners[event_name] || [];
-            let args = Array.prototype.slice.call(arguments, 1);
-            listeners.forEach(listener => listener.apply(null, args));
+            listeners.forEach((listener) => listener(...args));
         } catch (ex) {
             winston.error(ex);
             winston.error(ex.stack);
@@ -65,12 +67,12 @@ export class Scheduler {
                 this.publish('error', err);
                 winston.error("put failed: " + err);
                 winston.info(schedule);
-            })
+            });
     }
 
-    init() {
+    public init() {
         this.list((err?: Error, schedules?: Schedule[]) => {
-            winston.info("initial load of schedules:")
+            winston.info("initial load of schedules:");
             if (err) {
                 winston.error(err);
             }
@@ -78,121 +80,121 @@ export class Scheduler {
                 winston.info(schedules);
                 schedules.forEach(this.timing_out);
             }
-            this.publish('initialized')
-        })
+            this.publish('initialized');
+        });
     }
-    on(event_name: string, cb: Function) {
-        assert(event_name, "event_name")
-        assert(cb, "cb")
-        if (event_name.indexOf(',') !== -1) {
-            let that = this
-            const names = event_name.split(',').map(s => s.trim())
-            names.forEach(function (n) {
-                that.on(n, cb)
-            })
-            return
+    public on(eventName: string, cb: Function) {
+        assert(eventName, "event_name");
+        assert(cb, "cb");
+        if (eventName.indexOf(',') !== -1) {
+            const that = this;
+            const names = eventName.split(',').map((s) => s.trim());
+            names.forEach((n) => {
+                that.on(n, cb);
+            });
+            return;
         }
-        Scheduler.assert_valid_event_name(event_name)
-        let listeners = this._listeners[event_name] = this._listeners[event_name] || []
-        listeners.push(cb)
+        Scheduler.assert_valid_event_name(eventName);
+        const listeners = this._listeners[eventName] = this._listeners[eventName] || [];
+        listeners.push(cb);
     }
-    add(schedule: Schedule) {
-        assert(schedule, "schedule is null in add")
-        this.update_db(schedule, doc => {
-            winston.info("scheduler added: `" + schedule.task + "`")
-            this.publish("added", schedule)
-            this.timing_out(schedule)
-        })
+    public add(schedule: Schedule) {
+        assert(schedule, "schedule is null in add");
+        this.update_db(schedule, (doc) => {
+            winston.info("scheduler added: `" + schedule.task + "`");
+            this.publish("added", schedule);
+            this.timing_out(schedule);
+        });
     }
-    attend(schedule: Schedule) {
+    public attend(schedule: Schedule) {
         schedule.attended = true;
-        this.update_db(schedule, doc => {
-            winston.info("scheduler attended: `" + schedule.task + "`")
+        this.update_db(schedule, (doc) => {
+            winston.info("scheduler attended: `" + schedule.task + "`");
             this.publish('attended', schedule);
             this.clear_timeout(schedule);
-        })
+        });
     }
-    recover(schedule: Schedule) {
-        schedule.attended = false
-        this.update_db(schedule, doc => {
-            winston.info("scheduler recovered `" + schedule.task + "`")
-            this.publish('recovered', schedule)
-            this.timing_out(schedule)
-        })
+    public recover(schedule: Schedule) {
+        schedule.attended = false;
+        this.update_db(schedule, (doc) => {
+            winston.info("scheduler recovered `" + schedule.task + "`");
+            this.publish('recovered', schedule);
+            this.timing_out(schedule);
+        });
     }
-    update_due(schedule: Schedule) {
-        assert(schedule, "schedule is null in update due")
-        this.update_db(schedule, doc => {
-            winston.info("scheduler update due: `" + schedule.task + "`")
-            this.publish('due_updated', schedule)
-            this.clear_timeout(schedule)
-            this.timing_out(schedule)
-        })
+    public update_due(schedule: Schedule) {
+        assert(schedule, "schedule is null in update due");
+        this.update_db(schedule, (doc) => {
+            winston.info("scheduler update due: `" + schedule.task + "`");
+            this.publish('due_updated', schedule);
+            this.clear_timeout(schedule);
+            this.timing_out(schedule);
+        });
     }
-    update_task(schedule: Schedule) {
-        assert(schedule, "schedule is null in update task")
-        this.update_db(schedule, doc => {
-            winston.info("scheduler update task: `" + schedule.task + "`")
-            this.publish('task_updated', schedule)
-        })
+    public update_task(schedule: Schedule) {
+        assert(schedule, "schedule is null in update task");
+        this.update_db(schedule, (doc) => {
+            winston.info("scheduler update task: `" + schedule.task + "`");
+            this.publish('task_updated', schedule);
+        });
     }
-    remove(schedule: Schedule) {
-        assert(schedule, "schedule is null in remove")
+    public remove(schedule: Schedule) {
+        assert(schedule, "schedule is null in remove");
         db.remove(schedule).then(() => {
-            winston.info("scheduler removed: `" + schedule.task + "`")
-            this.publish('removed', schedule)
-            this.clear_timeout(schedule)
+            winston.info("scheduler removed: `" + schedule.task + "`");
+            this.publish('removed', schedule);
+            this.clear_timeout(schedule);
         }).catch((err: Error) => {
-            this.publish('error', err)
+            this.publish('error', err);
             winston.error("remove failed: " + err);
-        })
+        });
     }
-    list(cb: (error?: Error, schedules?: Schedule[]) => void) {
-        assert(cb, "cb")
-        var now = new Date()
-        now.setDate(now.getDate() - 1)
-        var yesterday_morning = new Date(now.toLocaleDateString())
+    public list(cb: (error?: Error, schedules?: Schedule[]) => void) {
+        assert(cb, "cb");
+        const now = new Date();
+        now.setDate(now.getDate() - 1);
+        let yesterday_morning = new Date(now.toLocaleDateString());
         db.createIndex({
             index: {
-                fields: ['due', 'attended']
-            }
+                fields: ['due', 'attended'],
+            },
         }).then(() => {
             let recent_schedules = db.find({
                 selector: {
-                    'due': {
-                        '$gte': yesterday_morning,
-                        '$lt': '3000-01-01'
-                    }
+                    due: {
+                        $gte: yesterday_morning,
+                        $lt: '3000-01-01',
+                    },
                 },
-                sort: ['due']
+                sort: ['due'],
             });
 
             let past_unattended_schedules = db.find({
                 selector: {
-                    'due': {
-                        '$lt': yesterday_morning,
+                    due: {
+                        $lt: yesterday_morning,
                     },
-                    'attended': {
-                        '$ne': true
-                    }
-                }
-            })
+                    attended: {
+                        $ne: true,
+                    },
+                },
+            });
 
-            let all_schedules = Promise.all([recent_schedules, past_unattended_schedules])
+            let all_schedules = Promise.all([recent_schedules, past_unattended_schedules]);
             all_schedules.then((res) => {
-                let docs = _.concat(res[0].docs, res[1].docs)
+                const docs = _.concat(res[0].docs, res[1].docs);
                 const schedules = docs.map(Schedule.fix);
                 cb(undefined, schedules);
             }).catch((err: Error) => {
                 this.publish('error', err);
                 cb(new Error(`find failed: ${err}\r\n${err.stack}`));
-            })
+            });
         }).catch((err: Error) => {
             this.publish('error', err);
             cb(new Error("create index failed: " + err + '\r\n' + err.stack));
         });
     }
-    close(cb: () => void) {
+    public close(cb: () => void) {
         db.close().then(cb);
     }
 }
