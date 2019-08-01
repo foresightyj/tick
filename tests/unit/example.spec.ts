@@ -1,12 +1,17 @@
-import { shallowMount } from '@vue/test-utils';
-import HelloWorld from '@/components/HelloWorld.vue';
+import Schedule from "@/scheduler/Schedule";
+import "@/scheduler/extendDateJs";
 
-describe('HelloWorld.vue', () => {
-  it('renders props.msg when passed', () => {
-    const msg = 'new message';
-    const wrapper = shallowMount(HelloWorld, {
-      propsData: { msg },
+describe('Schedule', () => {
+    it('tomorrow', () => {
+        const s = Schedule.parseCommand('tomorrow hello world');
+        expect(s).toBeTruthy();
+        expect(s!.due).toEqual(Date.today().addDays(1));
+        expect(s!.task).toEqual("hello world");
     });
-    expect(wrapper.text()).toMatch(msg);
-  });
+    it('next friday', () => {
+        const s = Schedule.parseCommand('next friday hi there');
+        expect(s).toBeTruthy();
+        expect(s!.due).toEqual(Date.today().addDays(1));
+        expect(s!.task).toEqual("hi there");
+    });
 });
