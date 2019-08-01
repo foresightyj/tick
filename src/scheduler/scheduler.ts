@@ -1,8 +1,7 @@
 import assert from "assert";
 import _ from "lodash";
 import * as winston from "winston";
-import * as ip from "ip";
-import PouchDb from "pouchdb";
+import PouchDB from "pouchdb";
 import * as PouchDbFind from "pouchdb-find";
 PouchDB.plugin(PouchDbFind);
 import Schedule from "./Schedule";
@@ -10,50 +9,51 @@ import Schedule from "./Schedule";
 const dbName = "schedules.db";
 const db = new PouchDB(dbName);
 
-export default class Scheduler {
-    private static readonly _map: { [k: string]: NodeJS.Timeout } = {};
-    private static readonly _listeners: { [k: string]: Function[] } = {}
-    private static readonly supported_events = ['initialized', 'scheduled', 'schedule_due_time_passed', 'due',
-        'added', 'removed', 'due_updated', 'task_updated', 'attended', 'recovered', 'error'
+export class Scheduler {
+    private static readonly supported_events = ['initialized', 'scheduled',
+        'schedule_due_time_passed', 'due', 'added', 'removed',
+        'due_updated', 'task_updated', 'attended', 'recovered', 'error'
     ];
+    private readonly _map: { [k: string]: NodeJS.Timeout } = {};
+    private readonly _listeners: { [k: string]: Function[] } = {};
 
     private static assert_valid_event_name(event_name: string) {
         assert(Scheduler.supported_events.indexOf(event_name) > -1, event_name + ' is not supported. try: ' + Scheduler.supported_events.join(','))
     }
 
     private publish(event_name: string, ...args: any[]) {
-        Scheduler.assert_valid_event_name(event_name)
+        Scheduler.assert_valid_event_name(event_name);
         try {
-            const listeners = Scheduler._listeners[event_name] || []
-            let args = Array.prototype.slice.call(arguments, 1)
-            listeners.forEach(listener => listener.apply(null, args))
+            const listeners = this._listeners[event_name] || [];
+            let args = Array.prototype.slice.call(arguments, 1);
+            listeners.forEach(listener => listener.apply(null, args));
         } catch (ex) {
-            winston.error(ex)
-            winston.error(ex.stack)
-            throw "publish failed: " + ex.message
+            winston.error(ex);
+            winston.error(ex.stack);
+            throw new Error("publish failed: " + ex.message);
         }
     }
 
     private timing_out(schedule: Schedule) {
-        const now = new Date()
+        const now = new Date();
         if (schedule.due >= now) {
             const delta = schedule.delta;
-            Scheduler._map[schedule._id] = setTimeout(() => {
+            this._map[schedule._id] = setTimeout(() => {
                 this.publish('due', schedule);
-            }, delta * 1000)
-            winston.info("scheduler has scheduled timeout in " + delta + " seconds")
+            }, delta * 1000);
+            winston.info("scheduler has scheduled timeout in " + delta + " seconds");
             this.publish('scheduled', schedule);
         } else {
-            winston.info("oops scheduler cannot timeout `" + schedule.task + "` as due time has passed: ")
-            this.publish('schedule_due_time_passed', schedule, 'due time passed')
+            winston.info("oops scheduler cannot timeout `" + schedule.task + "` as due time has passed: ");
+            this.publish('schedule_due_time_passed', schedule, 'due time passed');
         }
     }
 
     private clear_timeout(schedule: Schedule) {
-        assert(schedule, "schedule in clear_timeout")
-        const timeout = Scheduler._map[schedule._id]
-        clearTimeout(timeout)
-        delete Scheduler._map[schedule._id]
+        assert(schedule, "schedule in clear_timeout");
+        const timeout = this._map[schedule._id];
+        clearTimeout(timeout);
+        delete this._map[schedule._id];
     }
 
     private update_db(schedule: Schedule, success_cb: (schedule: Schedule) => void) {
@@ -93,7 +93,7 @@ export default class Scheduler {
             return
         }
         Scheduler.assert_valid_event_name(event_name)
-        let listeners = Scheduler._listeners[event_name] = Scheduler._listeners[event_name] || []
+        let listeners = this._listeners[event_name] = this._listeners[event_name] || []
         listeners.push(cb)
     }
     add(schedule: Schedule) {
@@ -196,3 +196,5 @@ export default class Scheduler {
         db.close().then(cb);
     }
 }
+
+export default new Scheduler();
