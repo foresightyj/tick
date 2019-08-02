@@ -8,7 +8,7 @@ import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-buil
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
 import Schedule from "./scheduler/Schedule";
-import scheduler from "./scheduler/Scheduler";
+// import scheduler from "./scheduler/Scheduler";
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -18,6 +18,8 @@ let commandWindow: BrowserWindow | null;
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }]);
 
 let scheduleListWindow: BrowserWindow | null;
+
+import "./testorm";
 
 function createScheduleListWindow() {
     if (scheduleListWindow === null) {
@@ -38,7 +40,7 @@ function createScheduleListWindow() {
 
         // BrowserWindow.addDevToolsExtension(path.join(__dirname, "./extensions/vuejsdevtool/3.1.6_0"));
 
-        scheduleListWindow.on('closed', function() {
+        scheduleListWindow.on('closed', function () {
             scheduleListWindow = null;
         });
 
@@ -52,13 +54,13 @@ function createScheduleListWindow() {
 
         /*see https://electron.atom.io/docs/api/web-contents/*/
         scheduleListWindow.webContents.on('did-finish-load', () => {
-            scheduler.list(function(err, schedules) {
-                if (err) {
-                    winston.error(err);
-                } else {
-                    scheduleListWindow!.webContents.send('schedules', schedules);
-                }
-            });
+            // scheduler.list(function(err, schedules) {
+            // if (err) {
+            //     winston.error(err);
+            // } else {
+            //     scheduleListWindow!.webContents.send('schedules', schedules);
+            // }
+            // });
         });
     } else {
         scheduleListWindow.isVisible() ? scheduleListWindow.hide() : scheduleListWindow.show();
@@ -133,7 +135,7 @@ function createCommandWindow() {
                 winston.info("parsedCommand");
                 // @ts-ignore
                 winston.info(schedule);
-                scheduler.add(schedule);
+            // scheduler.add(schedule);
         }
     });
 }
@@ -160,17 +162,17 @@ app.on('activate', () => {
 // Some APIs can only be used after this event occurs.
 app.on('ready', async () => {
     if (isDevelopment && !process.env.IS_TEST) {
+        // disable due to GFW
         // Install Vue Devtools
-        try {
-            await installVueDevtools();
-        } catch (e) {
-            console.error('Vue Devtools failed to install:', e.toString());
-        }
+        // try {
+        //     await installVueDevtools(); 
+        // } catch (e) {
+        //     console.error('Vue Devtools failed to install:', e.toString());
+        // }
     }
     createCommandWindow();
-    console.log('Start it');
-    globalShortcut.register('alt+s', function() {
-        console.log("HHOHO");
+    console.log('Started successfully. Register shortcuts!');
+    globalShortcut.register('alt+s', function () {
         if (commandWindow) {
             commandWindow.isVisible() ? commandWindow.hide() : commandWindow.show();
             if (scheduleListWindow) {

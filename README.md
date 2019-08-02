@@ -1,34 +1,9 @@
 # tick
 
-## Project setup
-```
-npm install
-```
+# fix sqlite3
 
-### Compiles and hot-reloads for development
-```
-npm run serve
-```
+    npm run rebuildSqlite3
 
-### Compiles and minifies for production
-```
-npm run build
-```
+# Unable to find electron-prebuilt's version number
 
-### Run your tests
-```
-npm run test
-```
-
-### Lints and fixes files
-```
-npm run lint
-```
-
-### Run your unit tests
-```
-npm run test:unit
-```
-
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+    https://github.com/electron/electron-rebuild/issues/4
