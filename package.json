@@ -14,12 +14,13 @@
     "start": "ts-node src/testorm.ts",
     "fixPython": "npm config set python C:\\Users\\Administrator\\.windows-build-tools\\python27\\python.exe",
     "rebuildSqlite3": "npx electron-rebuild -f -v 1.4.13 -e ./node_modules/electron-prebuilt -w sqlite3",
-    "rebuild": "npx electron-rebuild -f -v 1.4.13 -w sqlite3,typeorm"
+    "rebuild": "npx electron-rebuild -f -v 5.0.8 -w sqlite3"
   },
   "main": "background.js",
   "dependencies": {
     "core-js": "^2.6.5",
     "datejs": "^1.0.0-rc3",
+    "sqlite3": "^4.0.9",
     "vue": "^2.6.10",
     "reflect-metadata": "^0.1.10"
   },
@@ -50,7 +51,6 @@
     "pouchdb-find": "^7.1.1",
     "sass": "^1.18.0",
     "sass-loader": "^7.1.0",
-    "sqlite3": "^4.0.9",
     "ts-jest": "^23.0.0",
     "ts-node": "3.3.0",
     "typeorm": "^0.2.18",
