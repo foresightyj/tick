@@ -4,7 +4,7 @@ import * as winston from "winston";
 // import PouchDB from "pouchdb";
 // import * as PouchDbFind from "pouchdb-find";
 // PouchDB.plugin(PouchDbFind);
-import Schedule from "./Schedule";
+import {Schedule} from "../entity/Schedule";
 
 const dbName = "schedules.db";
 // const db = new PouchDB(dbName);
@@ -17,7 +17,7 @@ export class Scheduler {
         'schedule_due_time_passed', 'due', 'added', 'removed',
         'due_updated', 'task_updated', 'attended', 'recovered', 'error',
     ];
-    private readonly _map: { [k: string]: NodeJS.Timeout } = {};
+    private readonly _map: { [k: string]: NodeJS.Timer } = {};
     private readonly _listeners: { [k: string]: Function[] } = {};
 
     private static assert_valid_event_name(event_name: string) {

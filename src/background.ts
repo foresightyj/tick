@@ -6,8 +6,11 @@ import { app, protocol, BrowserWindow, globalShortcut, ipcMain } from 'electron'
 import winston from "winston";
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib';
 const isDevelopment = process.env.NODE_ENV !== 'production';
+import assert from "assert";
 
-import Schedule from "./scheduler/Schedule";
+import "./testorm";
+import parseSchedule from './scheduler/parseSchedule';
+
 // import scheduler from "./scheduler/Scheduler";
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -18,8 +21,6 @@ let commandWindow: BrowserWindow | null;
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }]);
 
 let scheduleListWindow: BrowserWindow | null;
-
-import "./testorm";
 
 function createScheduleListWindow() {
     if (scheduleListWindow === null) {
@@ -84,13 +85,13 @@ function createCommandWindow() {
 
     if (process.env.WEBPACK_DEV_SERVER_URL) {
         // Load the url of the dev server if in development mode
-        commandWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string);
-        if (!process.env.IS_TEST) { commandWindow.webContents.openDevTools() }
+        commandWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + "command");
+        // if (!process.env.IS_TEST) { commandWindow.webContents.openDevTools() }
     } else {
         createProtocol('app');
         // Load the index.html when not in development
         // console.log('load url');
-        commandWindow.loadURL('app://./index.html');
+        commandWindow.loadURL('app://./command.html');
     }
 
     commandWindow.on('closed', () => {
@@ -126,11 +127,8 @@ function createCommandWindow() {
                 app.exit(0);
                 break;
             default:
-                const schedule = Schedule.parseCommand(raw_command);
-                if (!schedule) {
-                    alert("Wrong command: " + raw_command);
-                    break;
-                }
+                const schedule = parseSchedule(raw_command);
+                assert(schedule, "Wrong command: " + raw_command);
                 /* This works because CouchDB/PouchDB _ids are sorted lexicographically. */
                 winston.info("parsedCommand");
                 // @ts-ignore

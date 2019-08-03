@@ -26,6 +26,7 @@
   "devDependencies": {
     "@types/ip": "^1.1.0",
     "@types/jest": "^23.1.4",
+    "@types/lodash": "^4.14.136",
     "@types/nedb": "^1.8.8",
     "@types/node": "^8.0.29",
     "@types/pouchdb": "^6.4.0",
