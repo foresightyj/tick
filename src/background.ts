@@ -68,7 +68,6 @@ function createScheduleListWindow() {
 }
 
 function createCommandWindow() {
-    console.log('CREATE WINDOW');
     // Create the browser window.
     commandWindow = new BrowserWindow({
         show: false,
@@ -90,6 +89,7 @@ function createCommandWindow() {
     } else {
         createProtocol('app');
         // Load the index.html when not in development
+        // console.log('load url');
         commandWindow.loadURL('app://./index.html');
     }
 
