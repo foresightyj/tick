@@ -16,6 +16,8 @@ console.log('sqlite3', sqlite3);
 
 import scheduler from "./scheduler/Scheduler";
 
+(global as any).scheduler = scheduler;
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
 let commandWindow: BrowserWindow | null = null;
@@ -31,7 +33,6 @@ function createScheduleListWindow() {
 
         scheduleListWindow = new BrowserWindow({
             show: false,
-            backgroundColor: '#535a60',
             width: 800,
             height: 800,
             transparent: true,
@@ -44,12 +45,12 @@ function createScheduleListWindow() {
 
         if (process.env.WEBPACK_DEV_SERVER_URL) {
             // Load the url of the dev server if in development mode
-            scheduleListWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + "index");
-            // if (!process.env.IS_TEST) { commandWindow.webContents.openDevTools() }
+            scheduleListWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + "schedules");
+            if (!process.env.IS_TEST) { scheduleListWindow.webContents.openDevTools() }
         } else {
             // Load the index.html when not in development
             // console.log('load url');
-            scheduleListWindow.loadURL('app://./index.html');
+            scheduleListWindow.loadURL('app://./schedules.html');
         }
         // scheduleListWindow.webContents.openDevTools()
 
@@ -64,13 +65,19 @@ function createScheduleListWindow() {
         });
 
         ipcMain.on('schedules-escape', () => {
-            scheduleListWindow && scheduleListWindow!.hide();
+            if (process.env.WEBPACK_DEV_SERVER_URL) {
+                scheduleListWindow && scheduleListWindow!.destroy();
+                scheduleListWindow = null;
+            } else {
+                scheduleListWindow!.hide();
+            }
         });
 
         /*see https://electron.atom.io/docs/api/web-contents/*/
         scheduleListWindow.webContents.on('did-finish-load', async () => {
             const schedules = await scheduler.list();
             scheduleListWindow!.webContents.send('schedules', schedules);
+            scheduleListWindow!.show();
         });
     } else {
         scheduleListWindow.isVisible() ? scheduleListWindow.hide() : scheduleListWindow.show();

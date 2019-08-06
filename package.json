@@ -1,6 +1,7 @@
 {
   "name": "tick",
   "version": "0.1.0",
+  "author": "Yuan Jian",
   "private": true,
   "scripts": {
     "serve": "vue-cli-service serve",
@@ -43,8 +44,10 @@
     "electron": "^5.0.8",
     "electron-builder": "^21.2.0",
     "electron-prebuilt": "^1.4.13",
+    "element-ui": "^2.6.1",
     "ip": "^1.1.5",
     "lodash": "^4.17.15",
+    "moment": "^2.24.0",
     "mssql": "^5.1.0",
     "nedb": "^1.8.0",
     "pouchdb": "^7.1.1",
