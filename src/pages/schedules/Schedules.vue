@@ -8,8 +8,9 @@
           <el-table-column label="期限" width="240">
             <template slot-scope="scope">
               <el-date-picker
+                size="mini"
                 :value="scope.row.due"
-                @input="onPickerInput(scope.row, $event)"
+                @input="onDueChanged(scope.row, $event)"
                 type="datetime"
                 placeholder="选择日期时间"
                 align="right"
@@ -17,7 +18,37 @@
               ></el-date-picker>
             </template>
           </el-table-column>
-          <el-table-column prop="task" label="任务" width="360"></el-table-column>
+          <el-table-column label="任务" width="400">
+            <template slot-scope="scope">
+              <EditableInput :value="scope.row.task" @input="onTaskChanged(scope.row, $event)" />
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="180">
+            <template slot-scope="scope">
+              <el-button
+                plain
+                size="small"
+                :style="{color: 'red'}"
+                icon="el-icon-delete"
+                @click="onRemove(scope.row)"
+              >删除</el-button>
+              <el-button
+                plain
+                size="small"
+                :style="{color: 'green'}"
+                icon="el-icon-check"
+                v-if="!scope.row.completed"
+                @click="onComplete(scope.row)"
+              >完成</el-button>
+              <el-button
+                plain
+                size="small"
+                :style="{color: 'blue'}"
+                v-if="scope.row.completed"
+                @click="onRecover(scope.row)"
+              >复活</el-button>
+            </template>
+          </el-table-column>
         </el-table>
       </div>
     </div>
@@ -25,17 +56,21 @@
 </template>
 
 <script lang="ts">
+import assert from "assert";
 import Vue from "vue";
 import "element-ui/lib/theme-chalk/index.css";
 import { Scheduler } from "../../scheduler/Scheduler";
 import { Schedule } from "../../entity/Schedule";
-const { ipcRenderer, remote, shell } = require("electron");
+const { ipcRenderer, remote } = require("electron");
+import moment from "moment";
+import EditableInput from "./EditableInput.vue";
+
+import { Button, Table, TableColumn, Input, DatePicker, Dropdown, DropdownItem, DropdownMenu } from "element-ui";
+import { rowCallbackParams } from "element-ui/types/table";
+
 const scheduler = remote.getGlobal("scheduler") as Scheduler;
 
-import moment from "moment";
-
-import { Button, Table, TableColumn, Input, DatePicker } from "element-ui";
-import { rowCallbackParams } from "element-ui/types/table";
+assert(scheduler, "scheduler is falsy");
 
 interface Section {
   title: string,
@@ -51,6 +86,10 @@ export default Vue.extend({
     [Table.name]: Table,
     [TableColumn.name]: TableColumn,
     [DatePicker.name]: DatePicker,
+    [DropdownMenu.name]: DropdownMenu,
+    [DropdownItem.name]: DropdownItem,
+    [Dropdown.name]: Dropdown,
+    EditableInput,
   },
   filters: {
     formatDate(d: Date) {
@@ -127,11 +166,10 @@ export default Vue.extend({
         schedules: schedules_InPast3Days
       },
       {
-        title: 'Due past but unattended',
+        title: 'Due past but uncompleted',
         background: '#f2f2f2',
         schedules: schedules_MoreThan3DaysAgo
-      }
-      ];
+      }];
     }
   },
   async mounted() {
@@ -147,6 +185,11 @@ export default Vue.extend({
     const schedules = await scheduler.list();
     this.schedules = schedules;
     console.log("schedules", schedules);
+
+    scheduler.on("added", (schedule: Schedule) => {
+      console.log('schedule added', schedule);
+      this.schedules.push(schedule);
+    })
   },
   methods: {
     tableRowClassName(row: rowCallbackParams) {
@@ -158,10 +201,32 @@ export default Vue.extend({
       }
       return "";
     },
-    onPickerInput(schedule: Schedule, event: Date) {
+    onDueChanged(schedule: Schedule, event: Date) {
+      assert(schedule);
       schedule.due = event;
       this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, schedule);
       scheduler.update_due(schedule);
+    },
+    async onTaskChanged(schedule: Schedule, event: string) {
+      assert(schedule);
+      schedule.task = event;
+      const s = await scheduler.update_task(schedule);
+      this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
+    },
+    async onRemove(schedule: Schedule) {
+      assert(schedule);
+      scheduler.remove(schedule);
+      this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1);
+    },
+    async onComplete(schedule: Schedule) {
+      assert(schedule);
+      const s = await scheduler.complete(schedule);
+      this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
+    },
+    async onRecover(schedule: Schedule) {
+      assert(schedule);
+      const s = await scheduler.recover(schedule);
+      this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
     }
   }
 });

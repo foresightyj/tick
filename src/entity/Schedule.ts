@@ -22,7 +22,7 @@ export class Schedule {
     public task: string;
 
     @Column({ nullable: true })
-    public attended?: boolean;
+    public completed?: boolean;
 
     get delta() {
         return (this.due.getTime() - new Date().getTime()) / 1000;

@@ -9,7 +9,7 @@ import ScheduleRepository from "../repositories/ScheduleRepository";
 export class Scheduler {
     private static readonly supported_events = ['initialized', 'scheduled',
         'schedule_due_time_passed', 'due', 'added', 'removed',
-        'due_updated', 'task_updated', 'attended', 'recovered', 'error',
+        'due_updated', 'task_updated', 'completed', 'recovered', 'error',
     ];
     private readonly _timerMap: { [k: string]: NodeJS.Timer } = {};
     private readonly _listeners: { [k: string]: Function[] } = {};
@@ -55,24 +55,27 @@ export class Scheduler {
         delete this._timerMap[schedule.id];
     }
 
-    private async update_db(id: number, update: (schedule: Schedule) => void) {
+    private async update_db(schedule: Schedule): Promise<Schedule> {
+        assert(schedule, "schedule is falsy")
         const repo = (await this._scheduleRepo);
-        const schedule = await repo.findOneOrFail(id);
-        update(schedule);
-        console.log('saving', schedule);
-        await repo.save(schedule);
+        const s = await repo.findOneOrFail(schedule.id);
+        s.task = schedule.task;
+        s.due = schedule.due;
+        s.completed = schedule.completed;
+        await repo.save(s);
+        return s;
     }
 
-    // public async init() {
-    //     try {
-    //         winston.info("initial load of schedules:");
-    //         const schedules = await this.list();
-    //         winston.info(schedules);
-    //         schedules.forEach(this.timing_out);
-    //     } catch (err) {
-    //         winston.error(err);
-    //     }
-    // }
+    public async init() {
+        try {
+            winston.info("initial load of schedules:");
+            const schedules = await this.list();
+            winston.info(schedules);
+            schedules.forEach(this.timing_out);
+        } catch (err) {
+            winston.error(err);
+        }
+    }
     public on(eventName: string, cb: Function) {
         assert(eventName, "event_name");
         assert(cb, "cb");
@@ -88,41 +91,45 @@ export class Scheduler {
         const listeners = this._listeners[eventName] = this._listeners[eventName] || [];
         listeners.push(cb);
     }
-    public async add(schedule: Schedule) {
+    public async add(schedule: Schedule): Promise<Schedule> {
         const repo = await this._scheduleRepo;
         await repo.insert(schedule);
+        assert(schedule.id, "schedule.id must be non-zero after insertion");
+        console.log('added', schedule);
+        this.publish('added', schedule);
+        return schedule;
     }
-    public attend(schedule: Schedule) {
-        schedule.attended = true;
-        this.update_db(schedule.id, (doc) => {
-            winston.info("scheduler attended: `" + schedule.task + "`");
-            this.publish('attended', schedule);
-            this.clear_timeout(schedule);
-        });
+    public async complete(schedule: Schedule): Promise<Schedule> {
+        schedule.completed = true;
+        const s = await this.update_db(schedule);
+        winston.info("scheduler completed: `" + s.task + "`");
+        this.publish('completed', s)
+        this.clear_timeout(s);
+        return s;
     }
-    public recover(schedule: Schedule) {
-        schedule.attended = false;
-        this.update_db(schedule.id, (doc) => {
-            winston.info("scheduler recovered `" + schedule.task + "`");
-            this.publish('recovered', schedule);
-            this.timing_out(schedule);
-        });
+    public async recover(schedule: Schedule): Promise<Schedule> {
+        schedule.completed = false;
+        const s = await this.update_db(schedule);
+        winston.info("scheduler recovered `" + s.task + "`");
+        this.publish('recovered', s);
+        this.timing_out(s);
+        return s;
     }
-    public update_due(schedule: Schedule) {
+    public async update_due(schedule: Schedule): Promise<Schedule> {
         assert(schedule, "schedule is null in update due");
-        this.update_db(schedule.id, (doc) => {
-            winston.info("scheduler update due: `" + schedule.task + "`");
-            this.publish('due_updated', schedule);
-            this.clear_timeout(schedule);
-            this.timing_out(schedule);
-        });
+        const s = await this.update_db(schedule);
+        winston.info("scheduler update due: `" + s.task + "`");
+        this.publish('due_updated', s);
+        this.clear_timeout(s);
+        this.timing_out(s);
+        return s;
     }
-    public update_task(schedule: Schedule) {
+    public async update_task(schedule: Schedule): Promise<Schedule> {
         assert(schedule, "schedule is null in update task");
-        this.update_db(schedule.id, (doc) => {
-            winston.info("scheduler update task: `" + schedule.task + "`");
-            this.publish('task_updated', schedule);
-        });
+        const s = await this.update_db(schedule);
+        winston.info("scheduler update task: `" + s.task + "`");
+        this.publish('task_updated', s);
+        return s;
     }
     public async remove(schedule: Schedule) {
         assert(schedule, "schedule is null in remove");
@@ -140,20 +147,20 @@ export class Scheduler {
         const now = new Date();
         now.setDate(now.getDate() - 1);
         let yesterday_morning = new Date(now.toLocaleDateString());
-        const repo = await this._scheduleRepo;
 
+        const repo = await this._scheduleRepo;
         try {
             const recentSchedules = await repo.createQueryBuilder("schedule")
                 .where("DATE(schedule.due) >= :yesterday", { yesterday: yesterday_morning })
                 .orderBy("schedule.due")
                 .getMany();
 
-            const pastUnattendedSchedules = await repo.createQueryBuilder("schedule")
-                .where("NOT schedule.unattended")
+            const pastUncompletedSchedules = await repo.createQueryBuilder("schedule")
+                .where("NOT schedule.uncompleted")
                 .where("DATE(schedule.due) < :yesterday", { yesterday: yesterday_morning })
                 .orderBy("schedule.due")
                 .getMany();
-            return recentSchedules.concat(pastUnattendedSchedules);
+            return recentSchedules.concat(pastUncompletedSchedules);
         } catch (err) {
             this.publish('error', err);
             winston.error(err);

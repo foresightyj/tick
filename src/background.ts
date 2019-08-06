@@ -33,7 +33,8 @@ function createScheduleListWindow() {
 
         scheduleListWindow = new BrowserWindow({
             show: false,
-            width: 800,
+            // width: 800,
+            width: 1200,
             height: 800,
             transparent: true,
             frame: false,
@@ -197,6 +198,8 @@ app.on('ready', async () => {
         }
     });
 });
+
+scheduler.init();
 
 // Exit cleanly on request from parent process in development mode.
 if (isDevelopment) {
