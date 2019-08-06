@@ -171,8 +171,7 @@ scheduler.on('due', function (schedule) {
         buttons: ['Mark as Complete', "In 10 mins", "In 1 Hour", "Tonight", "Tomorrow", "Next Week"]
     }, function (btn_index) {
         if (btn_index === 0) {
-            // TODO save handled status
-            scheduler.complete(schedule)
+            scheduler.complete(schedule);
         } else if (btn_index >= 1) {
             switch (btn_index) {
                 case 2:
