@@ -9,6 +9,7 @@
             <template slot-scope="scope">
               <el-date-picker
                 size="mini"
+                :disabled="scope.row.completed"
                 :value="scope.row.due"
                 @input="onDueChanged(scope.row, $event)"
                 type="datetime"
@@ -20,7 +21,11 @@
           </el-table-column>
           <el-table-column label="任务" width="400">
             <template slot-scope="scope">
-              <EditableInput :value="scope.row.task" @input="onTaskChanged(scope.row, $event)" />
+              <EditableInput
+                :disabled="scope.row.completed"
+                :value="scope.row.task"
+                @input="onTaskChanged(scope.row, $event)"
+              />
             </template>
           </el-table-column>
           <el-table-column label="操作" width="180">
@@ -30,7 +35,7 @@
                 size="small"
                 :style="{color: 'red'}"
                 icon="el-icon-delete"
-                @click="onRemove(scope.row)"
+                @click="onRemove(scope.row, $event)"
               >删除</el-button>
               <el-button
                 plain
@@ -43,6 +48,7 @@
               <el-button
                 plain
                 size="small"
+                icon="el-icon-magic-stick"
                 :style="{color: 'blue'}"
                 v-if="scope.row.completed"
                 @click="onRecover(scope.row)"
@@ -65,7 +71,7 @@ const { ipcRenderer, remote } = require("electron");
 import moment from "moment";
 import EditableInput from "./EditableInput.vue";
 
-import { Button, Table, TableColumn, Input, DatePicker, Dropdown, DropdownItem, DropdownMenu } from "element-ui";
+import { Button, Table, TableColumn, Input, DatePicker, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message } from "element-ui";
 import { rowCallbackParams } from "element-ui/types/table";
 
 const scheduler = remote.getGlobal("scheduler") as Scheduler;
@@ -185,13 +191,16 @@ export default Vue.extend({
     const schedules = await scheduler.list();
     this.schedules = schedules;
     console.log("schedules", schedules);
-
-    scheduler.on("added", (schedule: Schedule) => {
-      console.log('schedule added', schedule);
-      this.schedules.push(schedule);
-    })
+    scheduler.addListener("added", this.onScheduleAdded);
+  },
+  destroyed() {
+    scheduler.removeListener("added", this.onScheduleAdded);
   },
   methods: {
+    onScheduleAdded(schedule: Schedule) {
+      console.log('schedule added', schedule);
+      this.schedules.push(schedule);
+    },
     tableRowClassName(row: rowCallbackParams) {
       const section = row.row as Section;
       if (row.rowIndex === 1) {
@@ -213,20 +222,31 @@ export default Vue.extend({
       const s = await scheduler.update_task(schedule);
       this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
     },
-    async onRemove(schedule: Schedule) {
+    async onRemove(schedule: Schedule, event: MouseEvent) {
+      const noConfirm = event.ctrlKey || event.altKey;
       assert(schedule);
-      scheduler.remove(schedule);
-      this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1);
+      try {
+        if (!noConfirm) {
+          await MessageBox.confirm('此操作将永久删除该任务, 是否继续?', '提示', { confirmButtonText: '确定', cancelButtonText: '取消', type: 'warning' });
+        }
+        scheduler.remove(schedule);
+        this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1);
+        if (!noConfirm) Message.success({ type: 'success', message: '删除成功!' });
+      } catch (err) {
+        console.log("cancel deleting task");
+      }
     },
     async onComplete(schedule: Schedule) {
       assert(schedule);
       const s = await scheduler.complete(schedule);
       this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
+      Message.success({ type: 'success', message: '完成任务' });
     },
     async onRecover(schedule: Schedule) {
       assert(schedule);
       const s = await scheduler.recover(schedule);
       this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
+      Message.info({ type: 'success', message: '复活任务' });
     }
   }
 });

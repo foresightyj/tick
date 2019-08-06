@@ -2,13 +2,14 @@
 
 import url from "url";
 import path from "path";
-import { app, protocol, BrowserWindow, globalShortcut, ipcMain } from 'electron';
+import { app, protocol, BrowserWindow, globalShortcut, ipcMain, dialog } from 'electron';
 import winston from "winston";
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib';
 const isDevelopment = process.env.NODE_ENV !== 'production';
 import assert from "assert";
 
 import parseSchedule from './scheduler/parseSchedule';
+import { get_tonight, get_tomorrow } from "./scheduler/time_utils";
 
 const sqlite3 = require('sqlite3')
 
@@ -152,10 +153,49 @@ function createCommandWindow() {
                 winston.info(schedule);
                 if (schedule) {
                     scheduler.add(schedule!);
+                    console.log('ADDED new Schedule', schedule.task);
                 }
         }
     });
 }
+
+
+scheduler.on('due', function (schedule) {
+    dialog.showMessageBox({
+        type: 'info',
+        // icon: './static/timer.png', //has problem with mac, disable for now
+        message: schedule.task,
+        detail: schedule.task + "\r\n" + schedule.due.toLocaleString(),
+        cancelId: 1, // same as remind
+        defaultId: 1,
+        buttons: ['Mark as Complete', "In 10 mins", "In 1 Hour", "Tonight", "Tomorrow", "Next Week"]
+    }, function (btn_index) {
+        if (btn_index === 0) {
+            // TODO save handled status
+            scheduler.complete(schedule)
+        } else if (btn_index >= 1) {
+            switch (btn_index) {
+                case 2:
+                    schedule.due.setHours(schedule.due.getHours() + 1)
+                    break
+                case 3:
+                    schedule.due = get_tonight()
+                case 4:
+                    schedule.due = get_tomorrow()
+                    break
+                case 5:
+                    schedule.due.setDate(schedule.due.getDate() + 7)
+                    break
+                case 1:
+                    schedule.due.setMinutes(schedule.due.getMinutes() + 10)
+                default:
+                    break
+            }
+            scheduler.update_due(schedule)
+        }
+    })
+})
+
 
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {

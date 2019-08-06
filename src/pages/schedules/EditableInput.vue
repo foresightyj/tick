@@ -1,7 +1,9 @@
 <template>
   <span>
     <span
+      class="editable-description"
       ref="taskDescription"
+      :class="{'editable-disabled': disabled}"
       v-show="!isEditing"
       v-on:click.prevent="onClick"
       v-html="urlify(value)"
@@ -11,13 +13,26 @@
       v-if="isEditing"
       v-click-outside="onClickOutside"
       size="mini"
+      :disabled="disabled"
       :value="copy"
       placeholder="请输入任务描述"
-      @input="onTaskChanged(scope.row, $event)"
+      @input="onUpdate"
+      @change="onChange"
     ></el-input>
   </span>
 </template>
 
+<style lang="scss">
+.editable-description {
+  display: inline-block;
+  width: 100%;
+}
+
+.editable-disabled {
+  text-decoration: line-through;
+  color: grey;
+}
+</style>
 
 <script lang="ts">
 import Vue from 'vue';
@@ -34,14 +49,12 @@ export default Vue.extend({
   directives: {
     'click-outside': {
       bind: function (el: any, binding: any, vnode: any) {
-        console.log('bind clickoutside', el);
         const exp = binding.expression;
         const handler = vnode.context[exp];
         if (typeof handler !== 'function') {
           throw new Error("v-click-outside only accepts a function argument but was passed: " + exp);
         }
         el.__vueClickOutsideHandler__ = function (event: any) {
-          console.log("handling outside", event.target, el);
           if (!(el == event.target || el.contains(event.target))) {
             handler.call(el, event);
           }
@@ -49,7 +62,6 @@ export default Vue.extend({
         document.addEventListener('click', el.__vueClickOutsideHandler__)
       },
       unbind: function (el: any) {
-        console.log('unbind clickoutside', el);
         document.removeEventListener('click', el.__vueClickOutsideHandler__);
       },
     }
@@ -58,6 +70,10 @@ export default Vue.extend({
     value: {
       required: true,
       type: String as Prop<string>
+    },
+    disabled: {
+      required: false,
+      type: Boolean as Prop<boolean>
     }
   },
   data() {
@@ -68,7 +84,6 @@ export default Vue.extend({
   },
   methods: {
     onClick: function (e: KeyboardEvent) {
-      console.log('clicked');
       const target = e.target as HTMLElement;
       if (e.ctrlKey || e.altKey) {
         if (target.tagName === 'A') {
@@ -80,12 +95,12 @@ export default Vue.extend({
         this.isEditing = true
       }
     },
-    onUpdate: function () {
+    onUpdate(val: string) {
+      this.copy = val;
+      this.$emit("input", val);
+    },
+    onChange(val: string) {
       this.isEditing = false;
-      var val = this.copy;
-      if (val) {
-        this.$emit("input", val);
-      }
     },
     urlify: function (text: string) {
       var urlRegex = /(https?:\/\/[^\s]+)/g
@@ -95,11 +110,8 @@ export default Vue.extend({
       return html;
     },
     onClickOutside: function (e: MouseEvent) {
-      console.log('clickoutside', e, this.$refs.taskDescription);
       if (e.target !== this.$refs.taskDescription) {
-        if (this.isEditing) {
-          this.isEditing = false
-        }
+        this.isEditing = false;
       }
     }
   }
