@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn } from "typeorm";
+import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from "typeorm";
 
 @Entity()
 export class Schedule {
@@ -6,13 +6,16 @@ export class Schedule {
     @PrimaryGeneratedColumn({ type: "int" })
     public id: number;
 
-    @CreateDateColumn()
+    @CreateDateColumn({})
+    @Index()
     public created: Date;
 
     @UpdateDateColumn()
+    @Index()
     public modified: Date;
 
     @Column({ type: "datetime" })
+    @Index()
     public due: Date;
 
     @Column({ type: "varchar", length: 1000, default: "buy stuff" })

@@ -8,35 +8,49 @@ import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-buil
 const isDevelopment = process.env.NODE_ENV !== 'production';
 import assert from "assert";
 
-import "./testorm";
 import parseSchedule from './scheduler/parseSchedule';
 
-// import scheduler from "./scheduler/Scheduler";
+const sqlite3 = require('sqlite3')
+
+console.log('sqlite3', sqlite3);
+
+import scheduler from "./scheduler/Scheduler";
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
-let commandWindow: BrowserWindow | null;
+let commandWindow: BrowserWindow | null = null;
 
 // Scheme must be registered before the app is ready
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }]);
 
-let scheduleListWindow: BrowserWindow | null;
+let scheduleListWindow: BrowserWindow | null = null;
 
 function createScheduleListWindow() {
-    if (scheduleListWindow === null) {
+    if (!scheduleListWindow) {
+        console.log('creating schedule list window');
+
         scheduleListWindow = new BrowserWindow({
+            show: false,
+            backgroundColor: '#535a60',
             width: 800,
             height: 800,
-            // fullscreen : true,
-            icon: './static/AppIcon40x40@2x.png',
+            transparent: true,
+            frame: false,
             skipTaskbar: true,
+            webPreferences: {
+                nodeIntegration: true,
+            },
         });
-        scheduleListWindow.loadURL(url.format({
-            pathname: path.join(__dirname, 'ui/schedules/schedules.html'),
-            protocol: 'file:',
-            slashes: true,
-        }));
 
+        if (process.env.WEBPACK_DEV_SERVER_URL) {
+            // Load the url of the dev server if in development mode
+            scheduleListWindow.loadURL(process.env.WEBPACK_DEV_SERVER_URL as string + "index");
+            // if (!process.env.IS_TEST) { commandWindow.webContents.openDevTools() }
+        } else {
+            // Load the index.html when not in development
+            // console.log('load url');
+            scheduleListWindow.loadURL('app://./index.html');
+        }
         // scheduleListWindow.webContents.openDevTools()
 
         // BrowserWindow.addDevToolsExtension(path.join(__dirname, "./extensions/vuejsdevtool/3.1.6_0"));
@@ -50,18 +64,13 @@ function createScheduleListWindow() {
         });
 
         ipcMain.on('schedules-escape', () => {
-            scheduleListWindow!.hide();
+            scheduleListWindow && scheduleListWindow!.hide();
         });
 
         /*see https://electron.atom.io/docs/api/web-contents/*/
-        scheduleListWindow.webContents.on('did-finish-load', () => {
-            // scheduler.list(function(err, schedules) {
-            // if (err) {
-            //     winston.error(err);
-            // } else {
-            //     scheduleListWindow!.webContents.send('schedules', schedules);
-            // }
-            // });
+        scheduleListWindow.webContents.on('did-finish-load', async () => {
+            const schedules = await scheduler.list();
+            scheduleListWindow!.webContents.send('schedules', schedules);
         });
     } else {
         scheduleListWindow.isVisible() ? scheduleListWindow.hide() : scheduleListWindow.show();
@@ -106,7 +115,7 @@ function createCommandWindow() {
     ipcMain.on('command-list', () => {
         // see https://electron.atom.io/docs/api/ipc-main/
         commandWindow && commandWindow.hide();
-        // createScheduleListWindow()
+        createScheduleListWindow()
     });
 
     ipcMain.on('command-enter', (event: string, raw_command: string) => {
@@ -133,7 +142,9 @@ function createCommandWindow() {
                 winston.info("parsedCommand");
                 // @ts-ignore
                 winston.info(schedule);
-            // scheduler.add(schedule);
+                if (schedule) {
+                    scheduler.add(schedule!);
+                }
         }
     });
 }

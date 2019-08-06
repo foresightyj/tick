@@ -3,7 +3,4 @@ import { Schedule } from "../entity/Schedule";
 
 @EntityRepository(Schedule)
 export default class UserRepository extends Repository<Schedule> {
-    findScheduleById(id: number) {
-        return this.findOne(id);
-    }
 }

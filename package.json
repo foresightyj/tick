@@ -40,7 +40,7 @@
     "aws-sdk": "^2.503.0",
     "babel-core": "7.0.0-bridge.0",
     "cross-env": "^5.2.0",
-    "electron": "^5.0.0",
+    "electron": "^5.0.8",
     "electron-builder": "^21.2.0",
     "electron-prebuilt": "^1.4.13",
     "ip": "^1.1.5",

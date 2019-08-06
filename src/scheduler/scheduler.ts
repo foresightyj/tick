@@ -1,28 +1,25 @@
 import assert from "assert";
 import _ from "lodash";
 import * as winston from "winston";
-// import PouchDB from "pouchdb";
-// import * as PouchDbFind from "pouchdb-find";
-// PouchDB.plugin(PouchDbFind);
-import {Schedule} from "../entity/Schedule";
 
-const dbName = "schedules.db";
-// const db = new PouchDB(dbName);
-
-import Datastore from "nedb";
-const db = new Datastore({ filename: "./schedule2.db", autoload: true });
+import { Schedule } from "../entity/Schedule";
+import connMaker from "../repositories/dbConnection";
+import ScheduleRepository from "../repositories/ScheduleRepository";
 
 export class Scheduler {
     private static readonly supported_events = ['initialized', 'scheduled',
         'schedule_due_time_passed', 'due', 'added', 'removed',
         'due_updated', 'task_updated', 'attended', 'recovered', 'error',
     ];
-    private readonly _map: { [k: string]: NodeJS.Timer } = {};
+    private readonly _timerMap: { [k: string]: NodeJS.Timer } = {};
     private readonly _listeners: { [k: string]: Function[] } = {};
 
     private static assert_valid_event_name(event_name: string) {
         assert(Scheduler.supported_events.indexOf(event_name) > -1, event_name + ' is not supported. try: ' + Scheduler.supported_events.join(','));
     }
+
+    private readonly _conn = connMaker();
+    private readonly _scheduleRepo = this._conn.then(c => c.getCustomRepository(ScheduleRepository))
 
     private publish(event_name: string, ...args: any[]) {
         Scheduler.assert_valid_event_name(event_name);
@@ -40,7 +37,7 @@ export class Scheduler {
         const now = new Date();
         if (schedule.due >= now) {
             const delta = schedule.delta;
-            this._map[schedule._id] = setTimeout(() => {
+            this._timerMap[schedule.id] = setTimeout(() => {
                 this.publish('due', schedule);
             }, delta * 1000);
             winston.info("scheduler has scheduled timeout in " + delta + " seconds");
@@ -53,36 +50,29 @@ export class Scheduler {
 
     private clear_timeout(schedule: Schedule) {
         assert(schedule, "schedule in clear_timeout");
-        const timeout = this._map[schedule._id];
+        const timeout = this._timerMap[schedule.id];
         clearTimeout(timeout);
-        delete this._map[schedule._id];
+        delete this._timerMap[schedule.id];
     }
 
-    private update_db(schedule: Schedule, success_cb: (schedule: Schedule) => void) {
-        db.put(schedule)
-            .then((doc: Schedule) => {
-                success_cb(doc);
-            })
-            .catch((err: Error) => {
-                this.publish('error', err);
-                winston.error("put failed: " + err);
-                winston.info(schedule);
-            });
+    private async update_db(id: number, update: (schedule: Schedule) => void) {
+        const repo = (await this._scheduleRepo);
+        const schedule = await repo.findOneOrFail(id);
+        update(schedule);
+        console.log('saving', schedule);
+        await repo.save(schedule);
     }
 
-    public init() {
-        this.list((err?: Error, schedules?: Schedule[]) => {
-            winston.info("initial load of schedules:");
-            if (err) {
-                winston.error(err);
-            }
-            if (schedules) {
-                winston.info(schedules);
-                schedules.forEach(this.timing_out);
-            }
-            this.publish('initialized');
-        });
-    }
+    // public async init() {
+    //     try {
+    //         winston.info("initial load of schedules:");
+    //         const schedules = await this.list();
+    //         winston.info(schedules);
+    //         schedules.forEach(this.timing_out);
+    //     } catch (err) {
+    //         winston.error(err);
+    //     }
+    // }
     public on(eventName: string, cb: Function) {
         assert(eventName, "event_name");
         assert(cb, "cb");
@@ -98,17 +88,13 @@ export class Scheduler {
         const listeners = this._listeners[eventName] = this._listeners[eventName] || [];
         listeners.push(cb);
     }
-    public add(schedule: Schedule) {
-        assert(schedule, "schedule is null in add");
-        this.update_db(schedule, (doc) => {
-            winston.info("scheduler added: `" + schedule.task + "`");
-            this.publish("added", schedule);
-            this.timing_out(schedule);
-        });
+    public async add(schedule: Schedule) {
+        const repo = await this._scheduleRepo;
+        await repo.insert(schedule);
     }
     public attend(schedule: Schedule) {
         schedule.attended = true;
-        this.update_db(schedule, (doc) => {
+        this.update_db(schedule.id, (doc) => {
             winston.info("scheduler attended: `" + schedule.task + "`");
             this.publish('attended', schedule);
             this.clear_timeout(schedule);
@@ -116,7 +102,7 @@ export class Scheduler {
     }
     public recover(schedule: Schedule) {
         schedule.attended = false;
-        this.update_db(schedule, (doc) => {
+        this.update_db(schedule.id, (doc) => {
             winston.info("scheduler recovered `" + schedule.task + "`");
             this.publish('recovered', schedule);
             this.timing_out(schedule);
@@ -124,7 +110,7 @@ export class Scheduler {
     }
     public update_due(schedule: Schedule) {
         assert(schedule, "schedule is null in update due");
-        this.update_db(schedule, (doc) => {
+        this.update_db(schedule.id, (doc) => {
             winston.info("scheduler update due: `" + schedule.task + "`");
             this.publish('due_updated', schedule);
             this.clear_timeout(schedule);
@@ -133,69 +119,49 @@ export class Scheduler {
     }
     public update_task(schedule: Schedule) {
         assert(schedule, "schedule is null in update task");
-        this.update_db(schedule, (doc) => {
+        this.update_db(schedule.id, (doc) => {
             winston.info("scheduler update task: `" + schedule.task + "`");
             this.publish('task_updated', schedule);
         });
     }
-    public remove(schedule: Schedule) {
+    public async remove(schedule: Schedule) {
         assert(schedule, "schedule is null in remove");
-        db.remove(schedule).then(() => {
-            winston.info("scheduler removed: `" + schedule.task + "`");
-            this.publish('removed', schedule);
+        try {
+            (await this._scheduleRepo).delete(schedule.id);
             this.clear_timeout(schedule);
-        }).catch((err: Error) => {
+            this.publish('removed', schedule);
+            winston.info("scheduler removed: `" + schedule.task + "`");
+        } catch (err) {
             this.publish('error', err);
             winston.error("remove failed: " + err);
-        });
+        }
     }
-    public list(cb: (error?: Error, schedules?: Schedule[]) => void) {
-        assert(cb, "cb");
+    public async list(): Promise<Schedule[]> {
         const now = new Date();
         now.setDate(now.getDate() - 1);
         let yesterday_morning = new Date(now.toLocaleDateString());
-        db.createIndex({
-            index: {
-                fields: ['due', 'attended'],
-            },
-        }).then(() => {
-            let recent_schedules = db.find({
-                selector: {
-                    due: {
-                        $gte: yesterday_morning,
-                        $lt: '3000-01-01',
-                    },
-                },
-                sort: ['due'],
-            });
+        const repo = await this._scheduleRepo;
 
-            let past_unattended_schedules = db.find({
-                selector: {
-                    due: {
-                        $lt: yesterday_morning,
-                    },
-                    attended: {
-                        $ne: true,
-                    },
-                },
-            });
+        try {
+            const recentSchedules = await repo.createQueryBuilder("schedule")
+                .where("DATE(schedule.due) >= :yesterday", { yesterday: yesterday_morning })
+                .orderBy("schedule.due")
+                .getMany();
 
-            let all_schedules = Promise.all([recent_schedules, past_unattended_schedules]);
-            all_schedules.then((res) => {
-                const docs = _.concat(res[0].docs, res[1].docs);
-                const schedules = docs.map(Schedule.fix);
-                cb(undefined, schedules);
-            }).catch((err: Error) => {
-                this.publish('error', err);
-                cb(new Error(`find failed: ${err}\r\n${err.stack}`));
-            });
-        }).catch((err: Error) => {
+            const pastUnattendedSchedules = await repo.createQueryBuilder("schedule")
+                .where("NOT schedule.unattended")
+                .where("DATE(schedule.due) < :yesterday", { yesterday: yesterday_morning })
+                .orderBy("schedule.due")
+                .getMany();
+            return recentSchedules.concat(pastUnattendedSchedules);
+        } catch (err) {
             this.publish('error', err);
-            cb(new Error("create index failed: " + err + '\r\n' + err.stack));
-        });
+            winston.error(err);
+            return [];
+        }
     }
-    public close(cb: () => void) {
-        db.close().then(cb);
+    public async close() {
+        (await this._conn).close();
     }
 }
 

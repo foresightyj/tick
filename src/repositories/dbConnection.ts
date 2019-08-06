@@ -4,7 +4,7 @@ import "reflect-metadata";
 import { User } from "../entity/User";
 import { Schedule } from "../entity/Schedule";
 
-export default createConnection({
+export default () => createConnection({
     type: "sqlite",
     database: "schedules.db",
     synchronize: true,
