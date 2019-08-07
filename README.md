@@ -10,6 +10,9 @@ Tick - an express task/alert manager
 # Demo screenshot
 
 ![Screenshot](tick.gif)
+![demo1](demo1.png)
+![demo2](demo2.png)
+![demo3](demo3.png)
 
 # Build
 
