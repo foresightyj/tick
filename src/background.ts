@@ -1,9 +1,9 @@
 'use strict';
 import path from "path";
-import { app, protocol, BrowserWindow, globalShortcut, ipcMain, dialog, Tray, Menu, Dialog } from 'electron';
-import winston from "winston";
+import { app, protocol, BrowserWindow, globalShortcut, ipcMain, dialog, Tray, Menu, MenuItem, shell } from 'electron';
+import contextMenu from 'electron-context-menu';
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib';
-const isDevelopment = process.env.NODE_ENV !== 'production';
+import winston from "winston";
 import assert from "assert";
 
 import parseSchedule from './scheduler/parseSchedule';
@@ -13,6 +13,10 @@ import { Schedule } from "./entity/Schedule"
 import scheduler from "./scheduler/Scheduler";
 require("./scheduler/extendDateJs");
 
+declare const __static: string;
+
+(global as any).scheduler = scheduler;
+
 winston.configure({
     transports: [
         new (winston.transports.Console)(),
@@ -20,9 +24,30 @@ winston.configure({
     ]
 });
 
-declare const __static: string;
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
-(global as any).scheduler = scheduler;
+contextMenu({
+    prepend: (defaultActions, params, browserWindow) => [
+        {
+            label: 'Rainbow',
+            visible: params.mediaType === 'image'
+        },
+        {
+            label: 'Search Google for “{selection}”',
+            // Only show it when right-clicking text
+            visible: params.selectionText.trim().length > 0,
+            click: () => {
+                shell.openExternal(`https://google.com/search?q=${encodeURIComponent(params.selectionText)}`);
+            }
+        }
+    ] as Partial<MenuItem>[] as any
+});
+
+process.on('uncaughtException', function (err) {
+    winston.warn("uncaughtException, see below:");
+    winston.error(err);
+})
+
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -32,6 +57,7 @@ let commandWindow: BrowserWindow | null = null;
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { secure: true, standard: true } }]);
 
 let scheduleListWindow: BrowserWindow | null = null;
+let devToolOpenedFirstTime = true;
 
 function createScheduleListWindow() {
     if (!scheduleListWindow) {
@@ -56,7 +82,7 @@ function createScheduleListWindow() {
             // Load the index.html when not in development
             // console.log('load url');
             scheduleListWindow.loadURL('app://./schedules.html');
-            // scheduleListWindow.webContents.openDevTools()
+            scheduleListWindow.webContents.openDevTools()
         }
 
         // BrowserWindow.addDevToolsExtension(path.join(__dirname, "./extensions/vuejsdevtool/3.1.6_0"));
@@ -67,6 +93,10 @@ function createScheduleListWindow() {
 
         scheduleListWindow.webContents.on('devtools-opened', () => {
             scheduleListWindow!.webContents.addWorkSpace(__dirname);
+            if (devToolOpenedFirstTime) {
+                scheduleListWindow!.webContents.closeDevTools();
+                devToolOpenedFirstTime = false;
+            }
         });
 
         ipcMain.on('schedules-escape', () => {
@@ -76,7 +106,6 @@ function createScheduleListWindow() {
             } else {
                 scheduleListWindow!.hide();
             }
-            
         });
         /*see https://electron.atom.io/docs/api/web-contents/*/
         scheduleListWindow.webContents.on('did-finish-load', async () => {
@@ -224,8 +253,6 @@ app.on('activate', () => {
 });
 
 
-let scheduleSubMenu = null
-let tray: Tray | null = null;
 
 
 const gotTheLock = app.requestSingleInstanceLock()
@@ -267,9 +294,10 @@ if (!gotTheLock) {
         });
     });
 
+    let tray: Tray | null = null;
     app.on('ready', () => {
         tray = new Tray(path.join(__static, 'Icon-Small.png'))
-        tray.setToolTip('Time it')
+        tray.setToolTip('Tick')
         const contextMenu = Menu.buildFromTemplate([
             { label: 'Close', type: 'normal', role: 'quit' }
         ])

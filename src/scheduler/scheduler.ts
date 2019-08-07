@@ -21,11 +21,15 @@ export class Scheduler extends EventEmitter {
     private start_tick(this: Scheduler, schedule: Schedule) {
         const now = new Date();
         if (schedule.due >= now) {
-            const delta = schedule.delta;
+            const deltaSeconds = schedule.delta;
+            if (deltaSeconds > 7 * 24 * 3600) {
+                winston.info("due time is greater than 7 days, skip ticking");
+                return;
+            }
             this._timerMap[schedule.id] = setTimeout(() => {
                 this.emit('due', schedule);
-            }, delta * 1000);
-            winston.info("scheduler has scheduled timeout in " + delta + " seconds");
+            }, deltaSeconds * 1000);
+            winston.info("scheduler has scheduled timeout in " + deltaSeconds + " seconds");
             this.emit('scheduled', schedule);
         } else {
             winston.info("oops scheduler cannot timeout `" + schedule.task + "` as due time has passed: ");
@@ -56,7 +60,7 @@ export class Scheduler extends EventEmitter {
             winston.info("initial load of schedules:");
             const schedules = await this.list();
             winston.info(schedules);
-            schedules.forEach(s=>this.start_tick(s));
+            schedules.forEach(s => this.start_tick(s));
         } catch (err) {
             winston.warn('Initialization Error');
             winston.error(err)

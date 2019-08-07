@@ -84,6 +84,7 @@ require("../../scheduler/extendDateJs");
 
 import { Button, Table, TableColumn, Input, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message } from "element-ui";
 import { rowCallbackParams } from "element-ui/types/table";
+import { ipcMain } from 'electron';
 
 const scheduler = remote.getGlobal("scheduler") as Scheduler;
 
@@ -181,11 +182,13 @@ export default Vue.extend({
     scheduler.addListener("added", this.onScheduleAdded);
     scheduler.addListener("due_updated", this.onScheduleUpdated);
     scheduler.addListener("task_updated", this.onScheduleUpdated);
+    scheduler.addListener("completed", this.onScheduleUpdated);
   },
   destroyed() {
     scheduler.removeListener("added", this.onScheduleAdded);
     scheduler.removeListener("due_updated", this.onScheduleUpdated);
     scheduler.removeListener("task_updated", this.onScheduleUpdated);
+    scheduler.addListener("completed", this.onScheduleUpdated);
   },
   methods: {
     onScheduleAdded(schedule: Schedule) {

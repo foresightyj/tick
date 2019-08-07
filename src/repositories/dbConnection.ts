@@ -9,7 +9,7 @@ const isDevelopment = process.env.NODE_ENV !== 'production';
 export default () => createConnection({
     type: "sqlite",
     database: "schedules.db",
-    synchronize: true,
+    synchronize: isDevelopment,
     logging: isDevelopment,
     entities: [User, Schedule],
 });

@@ -6,6 +6,7 @@
       :class="{'editable-disabled': disabled}"
       v-on:click.prevent="onClick"
       v-show="!isEditing"
+      :title="friendlyLongTime"
     >
       <i class="el-icon-time"></i>
       {{value | formatDate}}
@@ -103,7 +104,7 @@ export default Vue.extend({
             }
           },
           {
-            text: '一周以后',
+            text: '一周之后',
             onClick(picker: DatePicker) {
               const now = new Date();
               let nextWeek = now.addDays(7);
@@ -114,7 +115,7 @@ export default Vue.extend({
             }
           },
           {
-            text: '一个月以后',
+            text: '一月之后',
             onClick(picker: DatePicker) {
               const now = new Date();
               let nextMonth = now.addDays(30);
@@ -126,6 +127,11 @@ export default Vue.extend({
           },
         ]
       },
+    }
+  },
+  computed: {
+    friendlyLongTime(): string {
+      return moment(this.value).format("LLLL");
     }
   },
   filters: {
