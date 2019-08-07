@@ -3,9 +3,15 @@ import { Schedule } from '../entity/Schedule';
 import _ from "lodash";
 import "./extendDateJs";
 
-import { get_tomorrow, get_tonight } from "./time_utils";
+import { parse_numeric_time, get_tomorrow, get_tonight, round_off_to_next_working_hour } from "./time_utils";
 
 const timeUnitMap: { [k: string]: number } = { s: 1, m: 60, h: 3600, d: 3600 * 24, w: 3600 * 24 * 7 };
+
+interface IScheduleParseResult {
+    timeParsed: Date,
+    timeSegment: string,
+    taskSegment: string,
+}
 
 export default function parseSchedule(rawCommand: string): Schedule | undefined {
     // first, my home-made solution
@@ -48,12 +54,9 @@ export default function parseSchedule(rawCommand: string): Schedule | undefined 
     const spacePatt = /\s+/g;
     const MAX_ROUND = 5;
     let result = null;
-    let validIndex = 0;
     let round = 0;
-    let timeParsed = null;
-
     const tmrPatt = /\btmr\b/i;
-    // tslint:disable-next-line: no-conditional-assignment
+    const allParsed: IScheduleParseResult[] = [];
     while ((result = spacePatt.exec(rawCommand)) && round < MAX_ROUND) {
         round++;
         let segment = rawCommand.substring(0, result.index);
@@ -61,26 +64,60 @@ export default function parseSchedule(rawCommand: string): Schedule | undefined 
             segment = segment.replace(tmrPatt, 'tomorrow');
         }
         const tp = Date.parse(segment);
-        if (tp) {
-            validIndex = result.index;
-            timeParsed = tp;
+        if (!tp) break;
+        const validIndex = result.index;
+        const taskSegment = rawCommand.substring(validIndex).trim();
+        allParsed.push({
+            timeParsed: tp,
+            timeSegment: segment.trim(),
+            taskSegment: taskSegment.trim(),
+        });
+    }
+    if (!allParsed.length) throw new Error("failed to parse: " + rawCommand);
+
+    console.log('allParsed', allParsed);
+    //datejs failed to parse `tmr 1430` as `tmr`.
+    let lastParsed = allParsed[allParsed.length - 1];
+
+    // fix tomorrow 1430 parsed incorrectly
+    if (allParsed.length > 1) {
+        const secondLast = allParsed[allParsed.length - 2];
+        const diff = lastParsed.timeSegment.substr(secondLast.timeSegment.length).trim().toLowerCase();
+        assert(diff.length > 0, 'diff is falsy');
+        if (/^\d{3,4}$/.test(diff)) {
+            const parsed = parse_numeric_time(diff);
+            lastParsed.timeParsed = secondLast.timeParsed;
+            lastParsed.timeParsed.setHours(parsed.getHours());
+            lastParsed.timeParsed.setMinutes(parsed.getMinutes());
+            lastParsed.timeParsed.setSeconds(parsed.getSeconds());
         }
     }
-    const timeSegment = rawCommand.substring(0, validIndex).trim();
-    const taskSegment = rawCommand.substring(validIndex).trim();
 
-    // console.log("time parsed: " + time_parsed, ', time_segment:', time_segment);
-    if (timeParsed) {
-        if (timeParsed.getHours() === 0 && timeParsed.getMinutes() === 0 && timeParsed.getSeconds() === 0) {
-            // exactly at 0am which is not reasonable for our app
-            // so we adjust it to 9am as long as time_segment doesn't contain any digits
-            if (!/\d/.test(timeSegment)) {
-                // datejs gives tomorrow 0am but that is not very useful in our case,
-                // so we give it tomorrow 9am
-                timeParsed = timeParsed.addHours(9);
+    //fix `next friday 5am buy stuff` as `next friday` and `5am buy stuff`
+    const tokens = lastParsed.taskSegment.split(/(?<=^\S+)\s/) //courtesy, split on first whitespace
+    if (tokens.length) {
+        assert(tokens.length === 2, "tokens must be of length 2");
+        const firstToken = tokens[0];
+        if (/^\d{3,4}$/.test(firstToken)) { //hopefully 1430
+            const parsed = parse_numeric_time(firstToken);
+            lastParsed.timeParsed.setHours(parsed.getHours());
+            lastParsed.timeParsed.setMinutes(parsed.getMinutes());
+            lastParsed.timeParsed.setSeconds(parsed.getSeconds());
+            lastParsed.taskSegment = tokens[1];
+        } else {
+            const parsed = Date.parse(firstToken); //hopefully 8am or 2:30pm
+            if (parsed && parsed.getTime() > Date.today().getTime() && parsed.getTime() < Date.today().addDays(1).getTime()) {
+                lastParsed.timeParsed.setHours(parsed.getHours());
+                lastParsed.timeParsed.setMinutes(parsed.getMinutes());
+                lastParsed.timeParsed.setSeconds(parsed.getSeconds());
+                lastParsed.taskSegment = tokens[1];
             }
         }
-        return Schedule.create(timeParsed, taskSegment);
     }
-    throw new Error("failed to parse: " + rawCommand);
+
+    let timeParsed = lastParsed.timeParsed;
+    if (timeParsed.getHours() === 0 && timeParsed.getMinutes() === 0 && timeParsed.getSeconds() === 0) {
+        timeParsed = round_off_to_next_working_hour(timeParsed);
+    }
+    return Schedule.create(timeParsed, lastParsed.taskSegment);
 }

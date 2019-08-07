@@ -1,5 +1,5 @@
 Tick - an express task/alert manager
-=================================
+====================================
 
 # Background
 
@@ -33,8 +33,7 @@ Ctrl+S to open the command window, and subsequently:
 
 # TODO
 
-* command autocompletion
-* still does not support commands like `next friday 5pm buy grocery`, which is parsed `5pm buy grocery`.
+* command autocompletion/suggestion (or show parsed time in real time)
 * more unit tests on command parsing.
 
 
