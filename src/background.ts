@@ -107,12 +107,12 @@ function createScheduleListWindow() {
                 scheduleListWindow!.hide();
             }
         });
+
         /*see https://electron.atom.io/docs/api/web-contents/*/
-        scheduleListWindow.webContents.on('did-finish-load', async () => {
-            const schedules = await scheduler.list();
-            scheduleListWindow!.webContents.send('schedules', schedules);
-            scheduleListWindow!.show();
-        });
+        // scheduleListWindow.webContents.on('did-finish-load', async () => {
+        //     scheduleListWindow!.show();
+        // });
+        scheduleListWindow.show();
     } else {
         scheduleListWindow.isVisible() ? scheduleListWindow.hide() : scheduleListWindow.show();
     }
@@ -169,12 +169,16 @@ function createCommandWindow() {
                 break;
             case 'quit':
             case 'exit':
-                app.quit();
+                scheduler.close().then(() => {
+                    app.quit();
+                })
                 break;
             case 'reboot':
             case 'restart':
-                app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) });
-                app.exit(0);
+                scheduler.close().then(() => {
+                    app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) });
+                    app.exit(0);
+                })
                 break;
             default:
                 try {

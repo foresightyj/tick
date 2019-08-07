@@ -128,16 +128,8 @@ export class Scheduler extends EventEmitter {
 
         const repo = await this._scheduleRepo;
         try {
-            const recentSchedules = await repo.createQueryBuilder("schedule")
-                .where("DATE(schedule.due) >= :yesterday", { yesterday: yesterday_morning })
-                .orderBy("schedule.due")
-                .getMany();
-
-            const pastUncompletedSchedules = await repo.createQueryBuilder("schedule")
-                .where("NOT schedule.uncompleted")
-                .where("DATE(schedule.due) < :yesterday", { yesterday: yesterday_morning })
-                .orderBy("schedule.due")
-                .getMany();
+            const recentSchedules = await repo.findAfterDate(yesterday_morning);
+            const pastUncompletedSchedules = await repo.findUnCompletedBeforeDate(yesterday_morning);
             return recentSchedules.concat(pastUncompletedSchedules);
         } catch (err) {
             this.emit('error', err);

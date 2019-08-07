@@ -1,7 +1,6 @@
 import { getConnectionOptions, createConnection } from "typeorm";
 import "reflect-metadata";
 
-import { User } from "./entity/User";
 import { Schedule } from "./entity/Schedule";
 
 import ScheduleRepository from "./repositories/ScheduleRepository";

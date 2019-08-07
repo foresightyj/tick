@@ -1,6 +1,7 @@
 import { Entity, PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, Index } from "typeorm";
 
-@Entity()
+//see https://github.com/typeorm/typeorm/issues/2104
+@Entity("schedule")
 export class Schedule {
 
     @PrimaryGeneratedColumn({ type: "int" })
