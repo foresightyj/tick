@@ -30,7 +30,7 @@
 
 .editable-disabled {
   text-decoration: line-through;
-  color: grey;
+  color: lightgrey;
 }
 </style>
 
@@ -72,8 +72,8 @@ export default Vue.extend({
           console.log("clicked :" + t.href)
           shell.openExternal(t.href)
         }
-      } else {
-        this.isEditing = true
+      } else if (!this.disabled) {
+        this.isEditing = true;
       }
     },
     onUpdate(val: string) {

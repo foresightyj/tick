@@ -1,10 +1,15 @@
 <template>
   <div>
-    <el-input v-model="schedule_filter" placeholder="Search..." autofocus></el-input>
+    <el-input class="search-filter" v-model="schedule_filter" placeholder="Search tasks..." autofocus />
     <div v-for="section in sections" :key="section.title">
       <div v-if="section.schedules.length">
         <h3>{{section.title}}</h3>
-        <el-table :data="section.schedules" style="width: 100%" :row-class-name="tableRowClassName">
+        <el-table
+          :data="section.schedules"
+          style="width: 100%"
+          :row-class-name="tableRowClassName"
+          stripe
+        >
           <el-table-column label="期限" width="160">
             <template slot-scope="scope">
               <EditableTime
@@ -166,14 +171,25 @@ export default Vue.extend({
     this.schedules = schedules;
     console.log("schedules", schedules);
     scheduler.addListener("added", this.onScheduleAdded);
+    scheduler.addListener("due_updated", this.onScheduleUpdated);
+    scheduler.addListener("task_updated", this.onScheduleUpdated);
   },
   destroyed() {
     scheduler.removeListener("added", this.onScheduleAdded);
+    scheduler.removeListener("due_updated", this.onScheduleUpdated);
+    scheduler.removeListener("task_updated", this.onScheduleUpdated);
   },
   methods: {
     onScheduleAdded(schedule: Schedule) {
-      console.log('schedule added', schedule);
+      assert(schedule);
       this.schedules.push(schedule);
+    },
+    onScheduleUpdated(schedule: Schedule) {
+      assert(schedule);
+      const idx = this.schedules.findIndex(s => s.id === schedule.id);
+      if (idx > -1) {
+        this.schedules.splice(idx, 1, schedule);
+      }
     },
     tableRowClassName(row: rowCallbackParams) {
       const section = row.row as Section;
@@ -233,5 +249,10 @@ export default Vue.extend({
 
 .el-table .success-row {
   background: #f0f9eb;
+}
+.search-filter {
+  padding: 0 100px;
+  width: 400px;
+  margin: 0 auto;
 }
 </style>

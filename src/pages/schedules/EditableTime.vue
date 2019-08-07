@@ -3,9 +3,13 @@
     <strong
       class="editable-description"
       ref="editableDescription"
+      :class="{'editable-disabled': disabled}"
       v-on:click.prevent="onClick"
       v-show="!isEditing"
-    >{{value | formatDate}}</strong>
+    >
+      <i class="el-icon-time"></i>
+      {{value | formatDate}}
+    </strong>
     <el-date-picker
       v-if="isEditing"
       v-click-outside="onClickOutside"
@@ -13,6 +17,7 @@
       :disabled="disabled"
       :value="value"
       @input="onInput"
+      @change="onChange"
       class="editable-time"
       type="datetime"
       placeholder="选择日期时间"
@@ -30,7 +35,7 @@
 
 .editable-disabled {
   text-decoration: line-through;
-  color: grey;
+  color: lightgrey;
 }
 
 .editable-time {
@@ -71,6 +76,14 @@ export default Vue.extend({
       pickerOptions: {
         shortcuts: [
           {
+            text: '10分钟后',
+            onClick(picker: DatePicker) {
+              const now = new Date();
+              const hourLater = now.addMinutes(10);
+              picker.$emit('pick', hourLater);
+            }
+          },
+          {
             text: '1小时后',
             onClick(picker: DatePicker) {
               const now = new Date();
@@ -93,10 +106,24 @@ export default Vue.extend({
             text: '一周以后',
             onClick(picker: DatePicker) {
               const now = new Date();
-              const nextWeek = now.addDays(7);
+              let nextWeek = now.addDays(7);
+              if (!nextWeek.is().weekday()) {
+                nextWeek = nextWeek.addDays(2);
+              }
               picker.$emit('pick', nextWeek);
             }
-          }
+          },
+          {
+            text: '一个月以后',
+            onClick(picker: DatePicker) {
+              const now = new Date();
+              let nextMonth = now.addDays(30);
+              if (!nextMonth.is().weekday()) {
+                nextMonth = nextMonth.addDays(2);
+              }
+              picker.$emit('pick', nextMonth);
+            }
+          },
         ]
       },
     }
@@ -110,8 +137,14 @@ export default Vue.extend({
     onInput(val: Date) {
       this.$emit("input", val);
     },
+    onChange(val: Date) {
+      this.onInput(val);
+      this.isEditing = false;
+    },
     onClick() {
-      this.isEditing = true;
+      if (!this.disabled) {
+        this.isEditing = true;
+      }
     },
     onClickOutside: function (e: MouseEvent) {
       const descEl = this.$refs.editableDescription;

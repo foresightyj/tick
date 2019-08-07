@@ -1,6 +1,6 @@
 'use strict';
 import path from "path";
-import { app, protocol, BrowserWindow, globalShortcut, ipcMain, dialog, Tray, Menu , Dialog} from 'electron';
+import { app, protocol, BrowserWindow, globalShortcut, ipcMain, dialog, Tray, Menu, Dialog } from 'electron';
 import winston from "winston";
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib';
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -9,9 +9,11 @@ import assert from "assert";
 import parseSchedule from './scheduler/parseSchedule';
 import { get_tonight, get_tomorrow } from "./scheduler/time_utils";
 
+import { Schedule } from "./entity/Schedule"
 import scheduler from "./scheduler/Scheduler";
+require("./scheduler/extendDateJs");
 
-declare const __static:string;
+declare const __static: string;
 
 (global as any).scheduler = scheduler;
 
@@ -26,12 +28,10 @@ let scheduleListWindow: BrowserWindow | null = null;
 
 function createScheduleListWindow() {
     if (!scheduleListWindow) {
-        console.log('creating schedule list window');
-
         scheduleListWindow = new BrowserWindow({
             show: false,
-            // width: 800,
-            width: 1200,
+            // width: 1200,
+            width: 800,
             height: 800,
             transparent: true,
             frame: false,
@@ -49,8 +49,8 @@ function createScheduleListWindow() {
             // Load the index.html when not in development
             // console.log('load url');
             scheduleListWindow.loadURL('app://./schedules.html');
+            scheduleListWindow.webContents.openDevTools()
         }
-        // scheduleListWindow.webContents.openDevTools()
 
         // BrowserWindow.addDevToolsExtension(path.join(__dirname, "./extensions/vuejsdevtool/3.1.6_0"));
 
@@ -141,18 +141,18 @@ function createCommandWindow() {
                 app.exit(0);
                 break;
             default:
-                try{
-                const schedule = parseSchedule(raw_command);
-                assert(schedule, "Wrong command: " + raw_command);
-                /* This works because CouchDB/PouchDB _ids are sorted lexicographically. */
-                winston.info("parsedCommand");
-                // @ts-ignore
-                winston.info(schedule);
-                if (schedule) {
-                    scheduler.add(schedule!);
-                    console.log('ADDED new Schedule', schedule.task);
-                }
-                }catch(err){
+                try {
+                    const schedule = parseSchedule(raw_command);
+                    assert(schedule, "Wrong command: " + raw_command);
+                    /* This works because CouchDB/PouchDB _ids are sorted lexicographically. */
+                    winston.info("parsedCommand");
+                    // @ts-ignore
+                    winston.info(schedule);
+                    if (schedule) {
+                        scheduler.add(schedule!);
+                        console.log('ADDED new Schedule', schedule.task);
+                    }
+                } catch (err) {
                     const error = err as Error;
                     dialog.showErrorBox("错误命令", error.message);
                 }
@@ -161,7 +161,7 @@ function createCommandWindow() {
 }
 
 
-scheduler.on('due', function (schedule) {
+scheduler.on('due', function (schedule: Schedule) {
     dialog.showMessageBox({
         type: 'info',
         // icon: './static/timer.png', //has problem with mac, disable for now
@@ -169,29 +169,29 @@ scheduler.on('due', function (schedule) {
         detail: schedule.task + "\r\n" + schedule.due.toLocaleString(),
         cancelId: 1, // same as remind
         defaultId: 1,
-        buttons: ['Mark as Complete', "In 10 mins", "In 1 Hour", "Tonight", "Tomorrow", "Next Week"]
-    }, function (btn_index) {
+        buttons: ['标记为完成', "10分钟后", "一小时后", "今晚", "明早", "下周"]
+    }, function (btn_index: number) {
         if (btn_index === 0) {
             scheduler.complete(schedule);
         } else if (btn_index >= 1) {
             switch (btn_index) {
+                case 1:
+                    schedule.due = schedule.due.addMinutes(10);
                 case 2:
-                    schedule.due.setHours(schedule.due.getHours() + 1)
+                    schedule.due = schedule.due.addHours(1);
                     break
                 case 3:
-                    schedule.due = get_tonight()
+                    schedule.due = get_tonight();
                 case 4:
-                    schedule.due = get_tomorrow()
+                    schedule.due = get_tomorrow();
                     break
                 case 5:
-                    schedule.due.setDate(schedule.due.getDate() + 7)
+                    schedule.due = schedule.due.addDays(7);
                     break
-                case 1:
-                    schedule.due.setMinutes(schedule.due.getMinutes() + 10)
                 default:
                     break
             }
-            scheduler.update_due(schedule)
+            scheduler.update_due(schedule);
         }
     })
 })
