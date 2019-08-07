@@ -13,6 +13,13 @@ import { Schedule } from "./entity/Schedule"
 import scheduler from "./scheduler/Scheduler";
 require("./scheduler/extendDateJs");
 
+winston.configure({
+    transports: [
+        new (winston.transports.Console)(),
+        new (winston.transports.File)({ filename: 'tick.log' })
+    ]
+});
+
 declare const __static: string;
 
 (global as any).scheduler = scheduler;
@@ -63,7 +70,7 @@ function createScheduleListWindow() {
         });
 
         ipcMain.on('schedules-escape', () => {
-            if (process.env.WEBPACK_DEV_SERVER_URL) {
+            if (isDevelopment) {
                 scheduleListWindow && scheduleListWindow!.destroy();
                 scheduleListWindow = null;
             } else {
@@ -177,11 +184,13 @@ scheduler.on('due', function (schedule: Schedule) {
             switch (btn_index) {
                 case 1:
                     schedule.due = schedule.due.addMinutes(10);
+                    break;
                 case 2:
                     schedule.due = schedule.due.addHours(1);
                     break
                 case 3:
                     schedule.due = get_tonight();
+                    break
                 case 4:
                     schedule.due = get_tomorrow();
                     break

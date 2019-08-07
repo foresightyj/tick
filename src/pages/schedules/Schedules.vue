@@ -36,6 +36,7 @@
                 :style="{color: 'red'}"
                 icon="el-icon-delete"
                 @click="onRemove(scope.row, $event)"
+                title="Ctrl+click或者Alt+click无确认删除"
               >删除</el-button>
               <el-button
                 plain

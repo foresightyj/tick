@@ -86,7 +86,7 @@ export default Vue.extend({
     urlify: function (text: string) {
       var urlRegex = /(https?:\/\/[^\s]+)/g
       var html = text.replace(urlRegex, function (url) {
-        return '<a href="' + url + '" title="Ctrl+click to open in default browser">' + decodeURI(url) + '</a>'
+        return '<a href="' + url + '" title="Ctrl+click或者Alt+click在默认浏览器中打开">' + decodeURI(url) + '</a>'
       })
       return html;
     },
