@@ -53,6 +53,7 @@ import { Input } from "element-ui";
 const { shell } = require('electron');
 import "./ClickOutside";
 import moment from "moment";
+import { get_tonight, get_tomorrow } from "../../scheduler/time_utils";
 
 moment.locale("zh-CN");
 export default Vue.extend({
@@ -93,10 +94,16 @@ export default Vue.extend({
             }
           },
           {
+            text: '今晚',
+            onClick(picker: DatePicker) {
+              const tonight = get_tonight();
+              picker.$emit('pick', tonight);
+            }
+          },
+          {
             text: '明天',
             onClick(picker: DatePicker) {
-              const now = new Date();
-              const tmr = now.addDays(1);
+              const tmr = get_tomorrow();
               if (!tmr.is().weekday()) {
                 Message.warning("明天是周末哦~~")
               }
