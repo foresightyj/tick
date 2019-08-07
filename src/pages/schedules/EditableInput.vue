@@ -2,7 +2,7 @@
   <span>
     <span
       class="editable-description"
-      ref="taskDescription"
+      ref="editableDescription"
       :class="{'editable-disabled': disabled}"
       v-show="!isEditing"
       v-on:click.prevent="onClick"
@@ -40,31 +40,12 @@ import { Prop } from "vue/types/options";
 import { Input } from "element-ui";
 const ClickOutside = require('vue-click-outside');
 const { shell } = require('electron');
+import "./ClickOutside";
+import assert from "assert";
 
 export default Vue.extend({
   components: {
     [Input.name]: Input,
-  },
-  //   directives: { ClickOutside },
-  directives: {
-    'click-outside': {
-      bind: function (el: any, binding: any, vnode: any) {
-        const exp = binding.expression;
-        const handler = vnode.context[exp];
-        if (typeof handler !== 'function') {
-          throw new Error("v-click-outside only accepts a function argument but was passed: " + exp);
-        }
-        el.__vueClickOutsideHandler__ = function (event: any) {
-          if (!(el == event.target || el.contains(event.target))) {
-            handler.call(el, event);
-          }
-        };
-        document.addEventListener('click', el.__vueClickOutsideHandler__)
-      },
-      unbind: function (el: any) {
-        document.removeEventListener('click', el.__vueClickOutsideHandler__);
-      },
-    }
   },
   props: {
     value: {
@@ -110,7 +91,9 @@ export default Vue.extend({
       return html;
     },
     onClickOutside: function (e: MouseEvent) {
-      if (e.target !== this.$refs.taskDescription) {
+      const descEl = this.$refs.editableDescription;
+      assert(descEl, "descEl is falsy");
+      if (e.target !== descEl) {
         this.isEditing = false;
       }
     }

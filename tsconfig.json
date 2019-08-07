@@ -5,6 +5,8 @@
         "outDir": "./build",
         "emitDecoratorMetadata": true,
         "experimentalDecorators": true,
+        "noImplicitThis": true,
+        "strictBindCallApply": true,
         "strict": true,
         "importHelpers": true,
         "moduleResolution": "node",

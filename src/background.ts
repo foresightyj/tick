@@ -1,8 +1,6 @@
 'use strict';
-
-import url from "url";
 import path from "path";
-import { app, protocol, BrowserWindow, globalShortcut, ipcMain, dialog } from 'electron';
+import { app, protocol, BrowserWindow, globalShortcut, ipcMain, dialog, Tray, Menu , Dialog} from 'electron';
 import winston from "winston";
 import { createProtocol, installVueDevtools } from 'vue-cli-plugin-electron-builder/lib';
 const isDevelopment = process.env.NODE_ENV !== 'production';
@@ -11,11 +9,9 @@ import assert from "assert";
 import parseSchedule from './scheduler/parseSchedule';
 import { get_tonight, get_tomorrow } from "./scheduler/time_utils";
 
-const sqlite3 = require('sqlite3')
-
-console.log('sqlite3', sqlite3);
-
 import scheduler from "./scheduler/Scheduler";
+
+declare const __static:string;
 
 (global as any).scheduler = scheduler;
 
@@ -145,6 +141,7 @@ function createCommandWindow() {
                 app.exit(0);
                 break;
             default:
+                try{
                 const schedule = parseSchedule(raw_command);
                 assert(schedule, "Wrong command: " + raw_command);
                 /* This works because CouchDB/PouchDB _ids are sorted lexicographically. */
@@ -154,6 +151,10 @@ function createCommandWindow() {
                 if (schedule) {
                     scheduler.add(schedule!);
                     console.log('ADDED new Schedule', schedule.task);
+                }
+                }catch(err){
+                    const error = err as Error;
+                    dialog.showErrorBox("错误命令", error.message);
                 }
         }
     });
@@ -213,44 +214,87 @@ app.on('activate', () => {
     }
 });
 
-// This method will be called when Electron has finished
-// initialization and is ready to create browser windows.
-// Some APIs can only be used after this event occurs.
-app.on('ready', async () => {
-    if (isDevelopment && !process.env.IS_TEST) {
-        // disable due to GFW
-        // Install Vue Devtools
-        // try {
-        //     await installVueDevtools(); 
-        // } catch (e) {
-        //     console.error('Vue Devtools failed to install:', e.toString());
-        // }
-    }
-    createCommandWindow();
-    console.log('Started successfully. Register shortcuts!');
-    globalShortcut.register('alt+s', function () {
+
+let scheduleSubMenu = null
+let tray: Tray | null = null;
+
+
+const gotTheLock = app.requestSingleInstanceLock()
+
+if (!gotTheLock) {
+    app.quit();
+} else {
+    app.on('second-instance', (event, commandLine, workingDirectory) => {
+        // Someone tried to run a second instance, we should focus our window.
         if (commandWindow) {
-            commandWindow.isVisible() ? commandWindow.hide() : commandWindow.show();
-            if (scheduleListWindow) {
-                scheduleListWindow.isVisible() ? scheduleListWindow.hide() : commandWindow.show();
-            }
+            if (commandWindow.isMinimized()) commandWindow.restore()
+            commandWindow.focus()
         }
-    });
-});
+    })
 
-scheduler.init();
 
-// Exit cleanly on request from parent process in development mode.
-if (isDevelopment) {
-    if (process.platform === 'win32') {
-        process.on('message', (data) => {
-            if (data === 'graceful-exit') {
-                app.quit();
+    // This method will be called when Electron has finished
+    // initialization and is ready to create browser windows.
+    // Some APIs can only be used after this event occurs.
+    app.on('ready', async () => {
+        if (isDevelopment && !process.env.IS_TEST) {
+            // disable due to GFW
+            // Install Vue Devtools
+            // try {
+            //     await installVueDevtools(); 
+            // } catch (e) {
+            //     console.error('Vue Devtools failed to install:', e.toString());
+            // }
+        }
+        createCommandWindow();
+        console.log('Started successfully. Register shortcuts!');
+        globalShortcut.register('alt+s', function () {
+            if (commandWindow) {
+                commandWindow.isVisible() ? commandWindow.hide() : commandWindow.show();
+                if (scheduleListWindow) {
+                    scheduleListWindow.isVisible() ? scheduleListWindow.hide() : commandWindow.show();
+                }
             }
         });
-    } else {
-        process.on('SIGTERM', () => {
-            app.quit();
-        });
+    });
+
+    app.on('ready', () => {
+        tray = new Tray(path.join(__static, 'Icon-Small.png'))
+        tray.setToolTip('Time it')
+        const contextMenu = Menu.buildFromTemplate([
+            { label: 'Close', type: 'normal', role: 'quit' }
+        ])
+
+        tray.setContextMenu(contextMenu)
+        tray.on('double-click', function () {
+            dialog.showMessageBox({
+                type: 'warning',
+                message: 'Close Timeit?',
+                detail: 'Are you sure?',
+                buttons: ['OK', 'NO']
+            }, function (btn_index) {
+                if (btn_index === 0) {
+                    app.quit()
+                }
+            })
+        })
+    })
+
+    // Exit cleanly on request from parent process in development mode.
+    if (isDevelopment) {
+        if (process.platform === 'win32') {
+            process.on('message', (data) => {
+                if (data === 'graceful-exit') {
+                    app.quit();
+                }
+            });
+        } else {
+            process.on('SIGTERM', () => {
+                app.quit();
+            });
+        }
     }
+    scheduler.init();
+
 }
+

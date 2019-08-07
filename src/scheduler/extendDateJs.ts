@@ -25,7 +25,9 @@ interface DateIntermediate{
     october():Date;
     november():Date;
     december():Date;
-    
+}
+interface DatePredicate {
+    weekday(): boolean;
 }
 interface Date {
     addHours(h: number): Date;
@@ -33,6 +35,7 @@ interface Date {
     addSeconds(s: number): Date;
     addDays(h: number): Date;
     next():DateIntermediate;
+    is(): DatePredicate;
 }
 
 interface DateConstructor {

@@ -5,18 +5,13 @@
       <div v-if="section.schedules.length">
         <h3>{{section.title}}</h3>
         <el-table :data="section.schedules" style="width: 100%" :row-class-name="tableRowClassName">
-          <el-table-column label="期限" width="240">
+          <el-table-column label="期限" width="160">
             <template slot-scope="scope">
-              <el-date-picker
-                size="mini"
+              <EditableTime
                 :disabled="scope.row.completed"
                 :value="scope.row.due"
                 @input="onDueChanged(scope.row, $event)"
-                type="datetime"
-                placeholder="选择日期时间"
-                align="right"
-                :picker-options="pickerOptions"
-              ></el-date-picker>
+              />
             </template>
           </el-table-column>
           <el-table-column label="任务" width="400">
@@ -70,8 +65,12 @@ import { Schedule } from "../../entity/Schedule";
 const { ipcRenderer, remote } = require("electron");
 import moment from "moment";
 import EditableInput from "./EditableInput.vue";
+import EditableTime from "./EditableTime.vue";
 
-import { Button, Table, TableColumn, Input, DatePicker, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message } from "element-ui";
+require("../../scheduler/extendDateJs");
+
+
+import { Button, Table, TableColumn, Input, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message } from "element-ui";
 import { rowCallbackParams } from "element-ui/types/table";
 
 const scheduler = remote.getGlobal("scheduler") as Scheduler;
@@ -91,43 +90,18 @@ export default Vue.extend({
     [Input.name]: Input,
     [Table.name]: Table,
     [TableColumn.name]: TableColumn,
-    [DatePicker.name]: DatePicker,
     [DropdownMenu.name]: DropdownMenu,
     [DropdownItem.name]: DropdownItem,
     [Dropdown.name]: Dropdown,
     EditableInput,
+    EditableTime,
   },
-  filters: {
-    formatDate(d: Date) {
-      return moment(d).format("YYYY-MM-DD");
-    }
-  },
+
   data() {
     return {
       schedule_filter: "",
       schedules: [] as Schedule[],
-      pickerOptions: {
-        shortcuts: [{
-          text: '今天',
-          onClick(picker: DatePicker) {
-            picker.$emit('pick', new Date());
-          }
-        }, {
-          text: '昨天',
-          onClick(picker: DatePicker) {
-            const date = new Date();
-            date.setTime(date.getTime() - 3600 * 1000 * 24);
-            picker.$emit('pick', date);
-          }
-        }, {
-          text: '一周前',
-          onClick(picker: DatePicker) {
-            const date = new Date();
-            date.setTime(date.getTime() - 3600 * 1000 * 24 * 7);
-            picker.$emit('pick', date);
-          }
-        }]
-      },
+
     };
   },
   computed: {

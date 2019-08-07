@@ -18,7 +18,7 @@ export class Scheduler extends EventEmitter {
     private readonly _conn = connMaker();
     private readonly _scheduleRepo = this._conn.then(c => c.getCustomRepository(ScheduleRepository))
 
-    private timing_out(schedule: Schedule) {
+    private start_tick(this: Scheduler, schedule: Schedule) {
         const now = new Date();
         if (schedule.due >= now) {
             const delta = schedule.delta;
@@ -56,9 +56,11 @@ export class Scheduler extends EventEmitter {
             winston.info("initial load of schedules:");
             const schedules = await this.list();
             winston.info(schedules);
-            schedules.forEach(this.timing_out);
+            schedules.forEach(s=>this.start_tick(s));
         } catch (err) {
-            winston.error(err);
+            winston.warn('Initialization Error');
+            winston.error(err)
+            console.log('Initialization error', err);
         }
     }
     public async add(schedule: Schedule): Promise<Schedule> {
@@ -67,7 +69,7 @@ export class Scheduler extends EventEmitter {
         assert(schedule.id, "schedule.id must be non-zero after insertion");
         console.log('added', schedule);
         this.emit('added', schedule);
-        this.timing_out(schedule);
+        this.start_tick(schedule);
         console.log('after added', schedule);
         return schedule;
     }
@@ -84,7 +86,7 @@ export class Scheduler extends EventEmitter {
         const s = await this.update_db(schedule);
         winston.info("scheduler recovered `" + s.task + "`");
         this.emit('recovered', s);
-        this.timing_out(s);
+        this.start_tick(s);
         return s;
     }
     public async update_due(schedule: Schedule): Promise<Schedule> {
@@ -93,7 +95,7 @@ export class Scheduler extends EventEmitter {
         winston.info("scheduler update due: `" + s.task + "`");
         this.emit('due_updated', s);
         this.clear_timeout(s);
-        this.timing_out(s);
+        this.start_tick(s);
         return s;
     }
     public async update_task(schedule: Schedule): Promise<Schedule> {
@@ -118,7 +120,7 @@ export class Scheduler extends EventEmitter {
     public async list(): Promise<Schedule[]> {
         const now = new Date();
         now.setDate(now.getDate() - 1);
-        let yesterday_morning = new Date(now.toLocaleDateString());
+        const yesterday_morning = new Date(now.toLocaleDateString());
 
         const repo = await this._scheduleRepo;
         try {
