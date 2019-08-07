@@ -30,6 +30,20 @@ describe('Schedule', () => {
         expect(a).toEqual(b.addDays(1))
     })
 
+    // it("10s", ()=>{
+    //     const s = parseSchedule('10s hello world');
+    //     expect(s).toBeTruthy();
+    //     expect(s!.task).toEqual("hello world");
+    //     expect(s!.due).toEqual(Date.today().addSeconds(10));
+    // })
+
+    // it("2h", ()=>{
+    //     const s = parseSchedule('2h hello world');
+    //     expect(s).toBeTruthy();
+    //     expect(s!.task).toEqual("hello world");
+    //     expect(s!.due).toEqual(Date.today().addHours(2));
+    // })
+
     it('tomorrow as tmr 9am', () => {
         const s = parseSchedule('tomorrow hello world');
         expect(s).toBeTruthy();

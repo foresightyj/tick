@@ -75,7 +75,6 @@ export default function parseSchedule(rawCommand: string): Schedule | undefined 
     }
     if (!allParsed.length) throw new Error("failed to parse: " + rawCommand);
 
-    console.log('allParsed', allParsed);
     //datejs failed to parse `tmr 1430` as `tmr`.
     let lastParsed = allParsed[allParsed.length - 1];
 
