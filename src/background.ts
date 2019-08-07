@@ -56,7 +56,7 @@ function createScheduleListWindow() {
             // Load the index.html when not in development
             // console.log('load url');
             scheduleListWindow.loadURL('app://./schedules.html');
-            scheduleListWindow.webContents.openDevTools()
+            // scheduleListWindow.webContents.openDevTools()
         }
 
         // BrowserWindow.addDevToolsExtension(path.join(__dirname, "./extensions/vuejsdevtool/3.1.6_0"));

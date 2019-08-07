@@ -1,5 +1,5 @@
 <template>
-  <input ref="input" type="text" class="command" v-model="value" />
+  <input ref="input" type="text" class="command" v-model="value" placeholder="Create a task ..." />
 </template>
 
 <script lang="ts">
@@ -23,26 +23,22 @@ export default Vue.extend({
   },
   mounted() {
     this.input.focus();
-    window.addEventListener(
-      "keyup",
-      e => {
-        /* code, see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code */
-        if (e.code === "Escape") {
-          ipcRenderer.send("command-escape");
-        } else if (e.code === "KeyL" && e.altKey) {
-          ipcRenderer.send("command-list");
-          e.preventDefault();
-          e.stopPropagation();
-          setTimeout(() => {
-            this.value = ""; //hack to remove special characters by mac's option+l
-          }, 20);
-        } else if (e.code === "Enter") {
-          ipcRenderer.send("command-enter", this.value);
-          this.value = "";
-        }
-      },
-      true
-    );
+    window.addEventListener("keyup", e => {
+      /* code, see https://developer.mozilla.org/en-US/docs/Web/API/KeyboardEvent/code */
+      if (e.code === "Escape") {
+        ipcRenderer.send("command-escape");
+      } else if (e.code === "KeyL" && e.altKey) {
+        ipcRenderer.send("command-list");
+        e.preventDefault();
+        e.stopPropagation();
+        setTimeout(() => {
+          this.value = ""; //hack to remove special characters by mac's option+l
+        }, 20);
+      } else if (e.code === "Enter") {
+        ipcRenderer.send("command-enter", this.value);
+        this.value = "";
+      }
+    }, true);
   }
 });
 </script>
