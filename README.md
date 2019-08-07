@@ -7,6 +7,10 @@ Tick - an express task/alert manager
 
 > The palest ink is better than the best memory -- Ancient Chinese Proverb.
 
+# Demo screenshot
+
+![Screenshot](tick.gif)
+
 # Build
 
 build with yarn (**not npm**). Make sure you have node-gyp and electron-builder installed.
