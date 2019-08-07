@@ -5,9 +5,9 @@ import { Schedule } from "../entity/Schedule";
 
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-export default () => createConnection({
+export default (dbPath?: string) => createConnection({
     type: "sqlite",
-    database: "schedules.db",
+    database: dbPath ? dbPath : "schedules.db",
     synchronize: true,
     logging: isDevelopment,
     entities: [Schedule],

@@ -9,12 +9,19 @@ import assert from "assert";
 import parseSchedule from './scheduler/parseSchedule';
 import { get_tonight, get_tomorrow } from "./scheduler/time_utils";
 
+import connMaker from "./repositories/dbConnection";
 import { Schedule } from "./entity/Schedule"
-import scheduler from "./scheduler/Scheduler";
+import Scheduler from "./scheduler/Scheduler";
+
 require("./scheduler/extendDateJs");
 
 declare const __static: string;
+const isDevelopment = process.env.NODE_ENV !== 'production';
 
+
+const dbConnection = connMaker(isDevelopment ? undefined : path.join(app.getPath("home"), "_tick_schedules_.db"));
+
+const scheduler = new Scheduler(dbConnection);
 (global as any).scheduler = scheduler;
 
 winston.configure({
@@ -24,7 +31,6 @@ winston.configure({
     ]
 });
 
-const isDevelopment = process.env.NODE_ENV !== 'production';
 
 contextMenu({
     prepend: (defaultActions, params, browserWindow) => [
@@ -169,13 +175,11 @@ function createCommandWindow() {
                 break;
             case 'quit':
             case 'exit':
-                scheduler.close().then(() => {
-                    app.quit();
-                })
+                dbConnection.then(conn => conn.close()).then(() => app.quit());
                 break;
             case 'reboot':
             case 'restart':
-                scheduler.close().then(() => {
+                dbConnection.then(conn => conn.close()).then(() => {
                     app.relaunch({ args: process.argv.slice(1).concat(['--relaunch']) });
                     app.exit(0);
                 })

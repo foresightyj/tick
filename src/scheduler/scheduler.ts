@@ -3,10 +3,10 @@ import _ from "lodash";
 import * as winston from "winston";
 
 import { Schedule } from "../entity/Schedule";
-import connMaker from "../repositories/dbConnection";
 import ScheduleRepository from "../repositories/ScheduleRepository";
 
 import EventEmitter from 'events';
+import { Connection } from 'typeorm';
 
 export class Scheduler extends EventEmitter {
     private static readonly supported_events = ['initialized', 'scheduled',
@@ -15,8 +15,12 @@ export class Scheduler extends EventEmitter {
     ];
     private readonly _timerMap: { [k: string]: NodeJS.Timer } = {};
 
-    private readonly _conn = connMaker();
-    private readonly _scheduleRepo = this._conn.then(c => c.getCustomRepository(ScheduleRepository))
+    private readonly _scheduleRepo: Promise<ScheduleRepository>;
+
+    constructor(conn:Promise<Connection>) {
+        super();
+        this._scheduleRepo = conn.then(c => c.getCustomRepository(ScheduleRepository));
+    }
 
     private start_tick(this: Scheduler, schedule: Schedule) {
         const now = new Date();
@@ -137,9 +141,6 @@ export class Scheduler extends EventEmitter {
             return [];
         }
     }
-    public async close() {
-        (await this._conn).close();
-    }
 }
 
-export default new Scheduler();
+export default Scheduler;

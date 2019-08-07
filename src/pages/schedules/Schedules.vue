@@ -87,7 +87,6 @@ import { rowCallbackParams } from "element-ui/types/table";
 import { ipcMain } from 'electron';
 
 const scheduler = remote.getGlobal("scheduler") as Scheduler;
-
 assert(scheduler, "scheduler is falsy");
 
 interface Section {
