@@ -149,7 +149,7 @@ export default Vue.extend({
         schedules: schedules_Tomorrow
       },
       {
-        title: 'Upcomming',
+        title: 'Upcoming',
         background: '#f2f2f2',
         schedules: schedules_TheDayAfterTomorrow
       },
