@@ -1,6 +1,11 @@
 <template>
   <div>
-    <el-input class="search-filter" v-model="schedule_filter" placeholder="Search tasks..." autofocus />
+    <el-input
+      class="search-filter"
+      v-model="schedule_filter"
+      placeholder="Search tasks..."
+      autofocus
+    />
     <div v-for="section in sections" :key="section.title">
       <div v-if="section.schedules.length">
         <h3>{{section.title}}</h3>
@@ -59,6 +64,7 @@
         </el-table>
       </div>
     </div>
+    <Help />
   </div>
 </template>
 
@@ -72,9 +78,9 @@ const { ipcRenderer, remote } = require("electron");
 import moment from "moment";
 import EditableInput from "./EditableInput.vue";
 import EditableTime from "./EditableTime.vue";
+import Help from "./Help.vue";
 
 require("../../scheduler/extendDateJs");
-
 
 import { Button, Table, TableColumn, Input, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message } from "element-ui";
 import { rowCallbackParams } from "element-ui/types/table";
@@ -101,6 +107,7 @@ export default Vue.extend({
     [Dropdown.name]: Dropdown,
     EditableInput,
     EditableTime,
+    Help,
   },
 
   data() {

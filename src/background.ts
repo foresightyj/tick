@@ -76,8 +76,8 @@ function createScheduleListWindow() {
             } else {
                 scheduleListWindow!.hide();
             }
+            
         });
-
         /*see https://electron.atom.io/docs/api/web-contents/*/
         scheduleListWindow.webContents.on('did-finish-load', async () => {
             const schedules = await scheduler.list();
