@@ -1,4 +1,4 @@
-Tick - a quick task/alert manager
+Tick - an express task/alert manager
 =================================
 
 # Background
