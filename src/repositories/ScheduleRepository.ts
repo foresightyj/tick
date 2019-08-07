@@ -6,14 +6,14 @@ export default class ScheduleRepository extends Repository<Schedule> {
     public findAfterDate(date: Date): Promise<Schedule[]> {
         return this.createQueryBuilder("schedule")
             .where("DATE(schedule.due) >= :d", { d: date })
-            .orderBy("schedule.due")
+            .orderBy("schedule.due", "DESC")
             .getMany();
     }
     public findUnCompletedBeforeDate(date: Date): Promise<Schedule[]> {
         return this.createQueryBuilder("schedule")
             .where("NOT schedule.uncompleted")
             .where("DATE(schedule.due) < :d", { d: date })
-            .orderBy("schedule.due")
+            .orderBy("schedule.due", "DESC")
             .getMany();
     }
 }
