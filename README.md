@@ -1,6 +1,8 @@
 # Tick
 
-The palest ink is better than the best memory -- Ancient Chinese Proverb.
+> 好记性不如烂笔头 -- 中国谚语
+
+> The palest ink is better than the best memory -- Ancient Chinese Proverb.
 
 # Build
 
