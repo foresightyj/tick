@@ -10,6 +10,9 @@
       <section>
         <h5>创建任务 (例子)</h5>
         <ul>
+          <li>100s buy stuff in 100 seconds</li>
+          <li>10m buy stuff in 10 minutes</li>
+          <li>2h buy stuff in 2 hours</li>
           <li>tonight buy stuff</li>
           <li>tmr buy stuff</li>
           <li>tomorrow buy stuff (same as above)</li>

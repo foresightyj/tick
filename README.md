@@ -14,6 +14,9 @@ Ctrl+S to open the command window, and subsequently:
 
 1. run a command, e.g. `quit`, `exit`, `reboot`, `restart`, `list`;
 2. create a new task, e.g.
+   - 100s `buy stuff in 100 seconds`
+   - 10m `buy stuff in 10 minutes`
+   - 2h `buy stuff in 2 hours`
    - tonight `buy stuff`
    - tmr `buy stuff`
    - tomorrow `buy stuff (same as above)`
@@ -22,4 +25,4 @@ Ctrl+S to open the command window, and subsequently:
    - tmr 5pm `buy stuff`
    - tmr 1700 `buy stuff (same as above)`
    - next friday `buy stuff`
-   - more time formats supported by [datejs](https://github.com/datejs/Datejs#parsing)
+   - plus a lot more time formats supported by [datejs](https://github.com/datejs/Datejs#parsing)
