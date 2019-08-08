@@ -12,6 +12,7 @@
       {{value | formatDate}}
     </strong>
     <el-date-picker
+      ref="datePicker"
       v-if="isEditing"
       v-click-outside="onClickOutside"
       size="mini"
@@ -54,6 +55,8 @@ const { shell } = require('electron');
 import "./ClickOutside";
 import moment, { min } from "moment";
 import { get_tonight, get_tomorrow } from "../../scheduler/time_utils";
+import { DatePickerType } from 'element-ui/types/date-picker';
+import { setTimeout } from 'timers';
 
 moment.locale("zh-CN");
 export default Vue.extend({
@@ -153,6 +156,11 @@ export default Vue.extend({
   computed: {
     friendlyLongTime(): string {
       return moment(this.value).format("LLLL");
+    },
+    datePicker(): DatePicker {
+      const datePicker = this.$refs.datePicker;
+      assert(datePicker, "datePicker is falsy");
+      return datePicker as DatePicker;
     }
   },
   filters: {
@@ -171,6 +179,11 @@ export default Vue.extend({
     onClick() {
       if (!this.disabled) {
         this.isEditing = true;
+        //nextTick is may be too quick.
+        setTimeout(() => {
+          console.log('picker', this.datePicker);
+          this.datePicker.focus();
+        }, 10);
       }
     },
     onClickOutside: function (e: MouseEvent) {

@@ -304,7 +304,7 @@ if (!gotTheLock) {
             detail: schedule.task + "\r\n" + schedule.due.toLocaleString(),
             cancelId: 1, // same as remind
             defaultId: 1,
-            buttons: ['标记为完成', "10分钟后", "一小时后", "今晚", "明早", "下周"]
+            buttons: ['标记为完成', "10分钟后", "1小时后", "3小时后", "今晚", "明早", "下周"]
         }, function (btn_index: number) {
             if (btn_index === 0) {
                 scheduler.complete(schedule);
@@ -317,12 +317,15 @@ if (!gotTheLock) {
                         schedule.due = schedule.due.addHours(1);
                         break
                     case 3:
-                        schedule.due = get_tonight(new Date());
+                        schedule.due = schedule.due.addHours(3);
                         break
                     case 4:
-                        schedule.due = get_tomorrow(new Date());
+                        schedule.due = get_tonight(new Date());
                         break
                     case 5:
+                        schedule.due = get_tomorrow(new Date());
+                        break
+                    case 6:
                         schedule.due = schedule.due.addDays(7);
                         break
                     default:
