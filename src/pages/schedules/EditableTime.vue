@@ -169,21 +169,27 @@ export default Vue.extend({
     }
   },
   methods: {
-    onInput(val: Date) {
+    onInput(val: Date): void {
       this.$emit("input", val);
     },
-    onChange(val: Date) {
+    onChange(val: Date): void {
       this.onInput(val);
       this.isEditing = false;
     },
-    onClick() {
-      if (!this.disabled) {
-        this.isEditing = true;
+    onClick(): void {
+      const vm = this;
+      console.log('I am onClicked');
+      if (!vm.disabled) {
+        vm.isEditing = true;
         //nextTick is may be too quick.
         setTimeout(() => {
-          console.log('picker', this.datePicker);
-          this.datePicker.focus();
-        }, 10);
+          try {
+            vm.datePicker.focus();
+          } catch (err) {
+            //internally el-input may not has its actual input element ready yet.
+            console.log('error:', err);
+          }
+        }, 20);
       }
     },
     onClickOutside: function (e: MouseEvent) {
