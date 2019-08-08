@@ -3,7 +3,7 @@ import { Schedule } from '../entity/Schedule';
 import _ from "lodash";
 import "./extendDateJs";
 
-import { parse_numeric_time, get_tomorrow, get_tonight, round_off_to_next_working_hour } from "./time_utils";
+import { parse_numeric_time, get_tonight, round_off_to_next_working_hour } from "./time_utils";
 
 const timeUnitMap: { [k: string]: number } = { s: 1, m: 60, h: 3600, d: 3600 * 24, w: 3600 * 24 * 7 };
 
