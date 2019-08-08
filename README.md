@@ -1,6 +1,8 @@
 Tick - an express task/alert manager
 ====================================
 
+[![Build Status](https://travis-ci.org/foresightyj/tick.svg?branch=master)](https://travis-ci.org/foresightyj/tick)
+
 # Background
 
 > 好记性不如烂笔头 -- 中国谚语
