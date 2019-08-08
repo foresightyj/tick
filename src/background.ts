@@ -18,8 +18,8 @@ require("./scheduler/extendDateJs");
 declare const __static: string;
 const isDevelopment = process.env.NODE_ENV !== 'production';
 
-
-const dbConnection = connMaker(isDevelopment ? undefined : path.join(app.getPath("home"), "_tick_schedules_.db"));
+const dbPath = path.join(app.getPath("home"), "_tick_schedules_.db");
+const dbConnection = connMaker(isDevelopment ? undefined : dbPath);
 
 const scheduler = new Scheduler(dbConnection);
 (global as any).scheduler = scheduler;
@@ -246,9 +246,17 @@ if (!gotTheLock) {
     let tray: Tray | null = null;
     app.on('ready', () => {
         tray = new Tray(path.join(__static, 'Icon-Small.png'))
-        tray.setToolTip('Tick')
+        tray.setToolTip('Manage Tick');
         const contextMenu = Menu.buildFromTemplate([
-            { label: 'Close', type: 'normal', role: 'quit' }
+            { label: 'List schedules', type: 'normal', click: createScheduleListWindow },
+            {
+                visible: !isDevelopment,
+                label: 'Open database folder', type: 'normal', click: () => {
+                    const dbFolder = path.dirname(dbPath);
+                    shell.openExternal(dbFolder);
+                }
+            },
+            { label: 'Exit', type: 'normal', role: 'quit' }, //see roles: https://electronjs.org/docs/api/menu-item#roles
         ])
 
         tray.setContextMenu(contextMenu)
