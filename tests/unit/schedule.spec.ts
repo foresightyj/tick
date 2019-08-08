@@ -30,96 +30,128 @@ describe('Schedule', () => {
         expect(a).toEqual(b.addDays(1))
     })
 
-    // it("10s", ()=>{
-    //     const s = parseSchedule('10s hello world');
-    //     expect(s).toBeTruthy();
-    //     expect(s!.task).toEqual("hello world");
-    //     expect(s!.due).toEqual(Date.today().addSeconds(10));
-    // })
+    it("10s", () => {
+        const now = new Date();
+        const s = parseSchedule('10s hello world', now);
+        expect(s).toBeTruthy();
+        expect(s!.task).toEqual("hello world");
+        expect(s!.due).toEqual(new Date(now.getTime()).addSeconds(10));
+    })
 
-    // it("2h", ()=>{
-    //     const s = parseSchedule('2h hello world');
-    //     expect(s).toBeTruthy();
-    //     expect(s!.task).toEqual("hello world");
-    //     expect(s!.due).toEqual(Date.today().addHours(2));
-    // })
+    it("2h", () => {
+        const now = new Date();
+        const s = parseSchedule('2h hello world', now);
+        expect(s).toBeTruthy();
+        expect(s!.task).toEqual("hello world");
+        expect(s!.due).toEqual(new Date(now.getTime()).addHours(2));
+    })
 
     it('tomorrow as tmr 9am', () => {
-        const s = parseSchedule('tomorrow hello world');
+        const now = new Date();
+        const s = parseSchedule('tomorrow hello world', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hello world");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(9));
     });
 
     it('so is tmr', () => {
-        const s = parseSchedule('tmr buy apple');
+        const now = new Date();
+        const s = parseSchedule('tmr buy apple', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("buy apple");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(9));
     });
 
     it('tomorrow 2:40pm', () => {
-        const s = parseSchedule('tomorrow 2:40pm hello world');
+        const now = new Date();
+        const s = parseSchedule('tomorrow 2:40pm hello world', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hello world");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(14).addMinutes(40));
     });
 
     it('next friday as next friday 9am', () => {
-        const s = parseSchedule('next friday hi there');
+        const now = new Date();
+        const s = parseSchedule('next friday hi there', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hi there");
         expect(s!.due).toEqual(Date.today().next().friday().addHours(9));
     });
 
     it('tomorrow 1430 is parsed as tomorrow 2:30pm', () => {
-        const s = parseSchedule('tomorrow 1430 hello world');
+        const now = new Date();
+        const s = parseSchedule('tomorrow 1430 hello world', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hello world");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(14).addMinutes(30));
     });
     it('tomorrow 14:30 is parsed as tomorrow 2:30pm', () => {
-        const s = parseSchedule('tomorrow 14:30 hello world');
+        const now = new Date();
+        const s = parseSchedule('tomorrow 14:30 hello world', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hello world");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(14).addMinutes(30));
     });
     it('tomorrow 2:30pm is parsed as tomorrow 2:30pm', () => {
-        const s = parseSchedule('tomorrow 2:30pm hello world');
+        const now = new Date();
+        const s = parseSchedule('tomorrow 2:30pm hello world', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hello world");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(14).addMinutes(30));
     });
     it('tomorrow 14:30pm is parsed as tomorrow 2:30pm', () => {
-        const s = parseSchedule('tomorrow 14:30pm hello world');
+        const now = new Date();
+        const s = parseSchedule('tomorrow 14:30pm hello world', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hello world");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(14).addMinutes(30));
     });
     it('tomorrow 5pm', () => {
-        const s = parseSchedule('tomorrow 5pm hello world');
+        const now = new Date();
+        const s = parseSchedule('tomorrow 5pm hello world', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("hello world");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(17));
     });
 
     it('next friday buy grocery', () => {
-        const s = parseSchedule('next friday buy grocery');
+        const now = new Date();
+        const s = parseSchedule('next friday buy grocery', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("buy grocery");
         expect(s!.due).toEqual(Date.today().next().friday().addHours(9));
     });
     it('next friday 5pm buy grocery', () => {
-        const s = parseSchedule('next friday 5pm buy grocery');
+        const now = new Date();
+        const s = parseSchedule('next friday 5pm buy grocery', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("buy grocery");
         expect(s!.due).toEqual(Date.today().next().friday().addHours(17));
     });
 
     it('next friday 5pm buy grocery', () => {
-        const s = parseSchedule('next friday 5pm buy grocery');
+        const now = new Date();
+        const s = parseSchedule('next friday 5pm buy grocery', now);
         expect(s).toBeTruthy();
         expect(s!.task).toEqual("buy grocery");
         expect(s!.due).toEqual(Date.today().next().friday().addHours(17));
+    });
+
+    it('5pm buy grocery with now @ 8am will be parsed at today 5pm', () => {
+        const now = Date.today();
+        now.addHours(8);
+        const s = parseSchedule('5pm buy grocery', now);
+        expect(s).toBeTruthy();
+        expect(s!.task).toEqual("buy grocery");
+        expect(s!.due).toEqual(Date.today().addHours(17));
+    });
+
+    it('5pm buy grocery with now @ 6pm will be parsed as tmr 5pm', () => {
+        const now = Date.today();
+        now.addHours(18);
+        const s = parseSchedule('5pm buy grocery', now);
+        expect(s).toBeTruthy();
+        expect(s!.task).toEqual("buy grocery");
+        expect(s!.due).toEqual(Date.today().addDays(1).addHours(17));
     });
 });

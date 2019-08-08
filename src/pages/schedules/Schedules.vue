@@ -131,12 +131,19 @@ export default Vue.extend({
       let schedules_MoreThan3DaysAgo = this.schedules.filter(s => s.due < startOf3DaysAgo);
 
       if (this.schedule_filter) {
-        schedules_Today = schedules_Today.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1)
-        schedules_Tomorrow = schedules_Tomorrow.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1)
-        schedules_TheDayAfterTomorrow = schedules_TheDayAfterTomorrow.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1)
-        schedules_InPast3Days = schedules_InPast3Days.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1)
-        schedules_MoreThan3DaysAgo = schedules_MoreThan3DaysAgo.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1)
+        schedules_Today = schedules_Today.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
+        schedules_Tomorrow = schedules_Tomorrow.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
+        schedules_TheDayAfterTomorrow = schedules_TheDayAfterTomorrow.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
+        schedules_InPast3Days = schedules_InPast3Days.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
+        schedules_MoreThan3DaysAgo = schedules_MoreThan3DaysAgo.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
       }
+
+      const comparisonFunc = (a: Schedule, b: Schedule) => a.due.getTime() - b.due.getTime();
+      schedules_Today.sort(comparisonFunc);
+      schedules_Tomorrow.sort(comparisonFunc);
+      schedules_TheDayAfterTomorrow.sort(comparisonFunc);
+      schedules_InPast3Days.sort(comparisonFunc);
+      schedules_MoreThan3DaysAgo.sort(comparisonFunc);
 
       return [{
         title: 'Today',

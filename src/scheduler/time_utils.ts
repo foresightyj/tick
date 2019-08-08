@@ -7,8 +7,7 @@ export function get_now(): Date {
     return now;
 }
 
-export function get_tonight() {
-    const now = get_now();
+export function get_tonight(now:Date) {
     let tonight = new Date(now.toLocaleDateString());
     tonight.setHours(18); // 6pm tonight
     if (tonight < now) {
@@ -19,8 +18,8 @@ export function get_tonight() {
     return tonight;
 }
 
-export function get_tomorrow() {
-    const tomorrow = new Date(new Date().toLocaleDateString());
+export function get_tomorrow(now:Date) {
+    const tomorrow = new Date(now.toLocaleDateString());
     tomorrow.setDate(tomorrow.getDate() + 1);
     tomorrow.setHours(9); // 9am tomorrow morning
     return tomorrow;

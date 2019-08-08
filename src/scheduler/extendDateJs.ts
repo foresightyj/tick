@@ -30,10 +30,11 @@ interface DatePredicate {
     weekday(): boolean;
 }
 interface Date {
+    addDays(h: number): Date;
     addHours(h: number): Date;
     addMinutes(m: number): Date;
     addSeconds(s: number): Date;
-    addDays(h: number): Date;
+    addMilliseconds(s: number): Date;
     next():DateIntermediate;
     is(): DatePredicate;
 }

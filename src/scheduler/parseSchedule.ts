@@ -13,7 +13,7 @@ interface IScheduleParseResult {
     taskSegment: string,
 }
 
-export default function parseSchedule(rawCommand: string): Schedule | undefined {
+export default function parseSchedule(rawCommand: string, now: Date): Schedule | undefined {
     // first, my home-made solution
     let match = null;
     /*see https://stackoverflow.com/questions/4607745/split-string-only-on-first-instance-of-specified-character*/
@@ -22,15 +22,15 @@ export default function parseSchedule(rawCommand: string): Schedule | undefined 
     const task = splits[1];
 
     if (/tonight/i.test(firstToken)) {
-        return Schedule.create(get_tonight(), task);
+        return Schedule.create(get_tonight(now), task);
     }
 
     match = firstToken.match(/^(\d+)([smhdw])$/);
     if (match) {
         const delta = parseInt(match[1], 10) * timeUnitMap[match[2]];
         assert(_.isNumber(delta), "delta is not a number");
-        const due = new Date();
-        due.setSeconds(due.getSeconds() + delta);
+        const due = new Date(now.getTime());
+        due.addSeconds(delta);
         return Schedule.create(due, task);
     }
 
@@ -38,8 +38,7 @@ export default function parseSchedule(rawCommand: string): Schedule | undefined 
     if (match) {
         const h = parseInt(match[0].substring(0, 2), 10);
         const m = parseInt(match[0].substring(2, 4), 10);
-        const now = new Date();
-        const due = new Date();
+        const due = new Date(now.getTime());
         due.setHours(h);
         if (due < now) {
             due.setDate(due.getDate() + 1);
@@ -117,6 +116,9 @@ export default function parseSchedule(rawCommand: string): Schedule | undefined 
     let timeParsed = lastParsed.timeParsed;
     if (timeParsed.getHours() === 0 && timeParsed.getMinutes() === 0 && timeParsed.getSeconds() === 0) {
         timeParsed = round_off_to_next_working_hour(timeParsed);
+    }
+    if(timeParsed < now){
+        timeParsed = timeParsed.addDays(1);
     }
     return Schedule.create(timeParsed, lastParsed.taskSegment);
 }

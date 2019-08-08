@@ -186,7 +186,7 @@ function createCommandWindow() {
                 break;
             default:
                 try {
-                    const schedule = parseSchedule(raw_command);
+                    const schedule = parseSchedule(raw_command, new Date());
                     assert(schedule, "Wrong command: " + raw_command);
                     /* This works because CouchDB/PouchDB _ids are sorted lexicographically. */
                     winston.info("parsedCommand");
@@ -226,10 +226,10 @@ scheduler.on('due', function (schedule: Schedule) {
                     schedule.due = schedule.due.addHours(1);
                     break
                 case 3:
-                    schedule.due = get_tonight();
+                    schedule.due = get_tonight(new Date());
                     break
                 case 4:
-                    schedule.due = get_tomorrow();
+                    schedule.due = get_tomorrow(new Date());
                     break
                 case 5:
                     schedule.due = schedule.due.addDays(7);
