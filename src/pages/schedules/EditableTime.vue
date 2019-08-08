@@ -52,7 +52,7 @@ import { DatePicker, Message } from "element-ui";
 import { Input } from "element-ui";
 const { shell } = require('electron');
 import "./ClickOutside";
-import moment from "moment";
+import moment, { min } from "moment";
 import { get_tonight, get_tomorrow } from "../../scheduler/time_utils";
 
 moment.locale("zh-CN");
@@ -72,27 +72,34 @@ export default Vue.extend({
     }
   },
   data() {
+    const minutesLater = [1, 5, 10, 15, 30, 45].map(m => (
+      {
+        text: `${m}分钟后`,
+        onClick(picker: DatePicker) {
+          const now = new Date();
+          const minuteLater = now.addMinutes(m);
+          picker.$emit('pick', minuteLater);
+        }
+      }
+    ));
+
+    const hoursLater = [1, 2, 3, 6].map(h => (
+      {
+        text: `${h}小时后`,
+        onClick(picker: DatePicker) {
+          const now = new Date();
+          const hourLater = now.addHours(h);
+          picker.$emit('pick', hourLater);
+        }
+      }
+    ));
     return {
       copy: this.value,
       isEditing: false,
       pickerOptions: {
         shortcuts: [
-          {
-            text: '10分钟后',
-            onClick(picker: DatePicker) {
-              const now = new Date();
-              const hourLater = now.addMinutes(10);
-              picker.$emit('pick', hourLater);
-            }
-          },
-          {
-            text: '1小时后',
-            onClick(picker: DatePicker) {
-              const now = new Date();
-              const hourLater = now.addHours(1);
-              picker.$emit('pick', hourLater);
-            }
-          },
+          ...minutesLater,
+          ...hoursLater,
           {
             text: '今晚',
             onClick(picker: DatePicker) {
