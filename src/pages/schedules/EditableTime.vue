@@ -178,18 +178,17 @@ export default Vue.extend({
     },
     onClick(): void {
       const vm = this;
-      console.log('I am onClicked');
       if (!vm.disabled) {
         vm.isEditing = true;
         //nextTick is may be too quick.
-        setTimeout(() => {
-          try {
-            vm.datePicker.focus();
-          } catch (err) {
-            //internally el-input may not has its actual input element ready yet.
-            console.log('error:', err);
-          }
-        }, 20);
+        // setTimeout(() => {
+        //   try {
+        //     vm.datePicker.focus();
+        //   } catch (err) {
+        //     //internally el-input may not has its actual input element ready yet.
+        //     console.log('error:', err);
+        //   }
+        // }, 20);
       }
     },
     onClickOutside: function (e: MouseEvent) {
