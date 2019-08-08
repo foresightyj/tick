@@ -1,6 +1,7 @@
 <template>
   <div>
     <el-input
+      ref="searchFilter"
       class="search-filter"
       v-model="schedule_filter"
       placeholder="Search tasks..."
@@ -118,6 +119,11 @@ export default Vue.extend({
     };
   },
   computed: {
+    searchFilter(): Input {
+      const i = this.$refs.searchFilter;
+      assert(i, '$refs.searchFilter is falsy');
+      return i as Input;
+    },
     sections(): Section[] {
       let startOfToday = moment().startOf('day').toDate()
       let startOf3DaysAgo = moment().subtract(3, 'days').startOf('day').toDate()
@@ -180,6 +186,9 @@ export default Vue.extend({
         } else {
           ipcRenderer.send("schedules-escape");
         }
+      } else if (e.code === "KeyF" && e.ctrlKey && !e.altKey && !e.shiftKey) {
+        console.log(this.searchFilter);
+        this.searchFilter.focus();
       }
     }, true);
     const schedules = await scheduler.list();
