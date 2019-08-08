@@ -93,8 +93,7 @@ export default function parseSchedule(rawCommand: string, now: Date): Schedule |
 
     //fix `next friday 5am buy stuff` as `next friday` and `5am buy stuff`
     const tokens = lastParsed.taskSegment.split(/(?<=^\S+)\s/) //courtesy, split on first whitespace
-    if (tokens.length) {
-        assert(tokens.length === 2, "tokens must be of length 2");
+    if (tokens.length === 2) {
         const firstToken = tokens[0];
         if (/^\d{3,4}$/.test(firstToken)) { //hopefully 1430
             const parsed = parse_numeric_time(firstToken);

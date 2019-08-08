@@ -96,14 +96,14 @@ export default Vue.extend({
           {
             text: '今晚',
             onClick(picker: DatePicker) {
-              const tonight = get_tonight();
+              const tonight = get_tonight(new Date());
               picker.$emit('pick', tonight);
             }
           },
           {
             text: '明天',
             onClick(picker: DatePicker) {
-              const tmr = get_tomorrow();
+              const tmr = get_tomorrow(new Date());
               if (!tmr.is().weekday()) {
                 Message.warning("明天是周末哦~~")
               }

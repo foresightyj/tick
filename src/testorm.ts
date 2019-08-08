@@ -13,7 +13,7 @@ import parseSchedule from './scheduler/parseSchedule';
     try {
         const connection = await connMaker();
         const scheduleRepository = connection.getCustomRepository(ScheduleRepository);
-        const p = parseSchedule("tmr buy apple");
+        const p = parseSchedule("tmr buy apple", new Date());
         const schedule = await scheduleRepository.save(p!);
         const s = await scheduleRepository.findOne(schedule.id);
         console.log('schedule from db', s);

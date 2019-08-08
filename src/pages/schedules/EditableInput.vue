@@ -38,7 +38,6 @@
 import Vue from 'vue';
 import { Prop } from "vue/types/options";
 import { Input } from "element-ui";
-const ClickOutside = require('vue-click-outside');
 const { shell } = require('electron');
 import "./ClickOutside";
 import assert from "assert";

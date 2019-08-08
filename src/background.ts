@@ -204,65 +204,6 @@ function createCommandWindow() {
     });
 }
 
-
-scheduler.on('due', function (schedule: Schedule) {
-    dialog.showMessageBox({
-        type: 'info',
-        // icon: './static/timer.png', //has problem with mac, disable for now
-        message: schedule.task,
-        detail: schedule.task + "\r\n" + schedule.due.toLocaleString(),
-        cancelId: 1, // same as remind
-        defaultId: 1,
-        buttons: ['标记为完成', "10分钟后", "一小时后", "今晚", "明早", "下周"]
-    }, function (btn_index: number) {
-        if (btn_index === 0) {
-            scheduler.complete(schedule);
-        } else if (btn_index >= 1) {
-            switch (btn_index) {
-                case 1:
-                    schedule.due = schedule.due.addMinutes(10);
-                    break;
-                case 2:
-                    schedule.due = schedule.due.addHours(1);
-                    break
-                case 3:
-                    schedule.due = get_tonight(new Date());
-                    break
-                case 4:
-                    schedule.due = get_tomorrow(new Date());
-                    break
-                case 5:
-                    schedule.due = schedule.due.addDays(7);
-                    break
-                default:
-                    break
-            }
-            scheduler.update_due(schedule);
-        }
-    })
-})
-
-
-// Quit when all windows are closed.
-app.on('window-all-closed', () => {
-    // On macOS it is common for applications and their menu bar
-    // to stay active until the user quits explicitly with Cmd + Q
-    if (process.platform !== 'darwin') {
-        app.quit();
-    }
-});
-
-app.on('activate', () => {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (commandWindow === null) {
-        createCommandWindow();
-    }
-});
-
-
-
-
 const gotTheLock = app.requestSingleInstanceLock()
 
 if (!gotTheLock) {
@@ -323,6 +264,91 @@ if (!gotTheLock) {
                 }
             })
         })
+    })
+
+    // Quit when all windows are closed.
+    app.on('window-all-closed', () => {
+        // On macOS it is common for applications and their menu bar
+        // to stay active until the user quits explicitly with Cmd + Q
+        if (process.platform !== 'darwin') {
+            app.quit();
+        }
+    });
+
+    app.on('activate', () => {
+        // On macOS it's common to re-create a window in the app when the
+        // dock icon is clicked and there are no other windows open.
+        if (commandWindow === null) {
+            createCommandWindow();
+        }
+    });
+
+
+    app.on('will-quit', function () {
+        winston.debug('app quiting');
+    });
+
+    scheduler.on('due', function (schedule: Schedule) {
+        dialog.showMessageBox({
+            type: 'info',
+            // icon: './static/timer.png', //has problem with mac, disable for now
+            message: schedule.task,
+            detail: schedule.task + "\r\n" + schedule.due.toLocaleString(),
+            cancelId: 1, // same as remind
+            defaultId: 1,
+            buttons: ['标记为完成', "10分钟后", "一小时后", "今晚", "明早", "下周"]
+        }, function (btn_index: number) {
+            if (btn_index === 0) {
+                scheduler.complete(schedule);
+            } else if (btn_index >= 1) {
+                switch (btn_index) {
+                    case 1:
+                        schedule.due = schedule.due.addMinutes(10);
+                        break;
+                    case 2:
+                        schedule.due = schedule.due.addHours(1);
+                        break
+                    case 3:
+                        schedule.due = get_tonight(new Date());
+                        break
+                    case 4:
+                        schedule.due = get_tomorrow(new Date());
+                        break
+                    case 5:
+                        schedule.due = schedule.due.addDays(7);
+                        break
+                    default:
+                        break
+                }
+                scheduler.update_due(schedule);
+            }
+        })
+    })
+
+    scheduler.on('scheduled', function (schedule: Schedule) {
+        winston.debug(schedule);
+        const delta = (schedule.due.getTime() - new Date().getTime()) / 1000
+        tray && tray.displayBalloon({
+            icon: path.join(__static, 'Icon-Small.png'),
+            title: "Scheduled in " + schedule.friendlyDelta,
+            content: schedule.task
+        })
+
+        // notifier.notify({
+        //     icon: path.join(__dirname, './static/timer.png'),
+        //     title: "#Scheduled in " + friendly_delta,
+        //     message: schedule.task,
+        //     sound: true,
+        //     wait: true
+        // });
+
+        // notifier.on('click', function(notifierObject, options) {
+        //     // Triggers if `wait: true` and user clicks notification
+        // });
+
+        // notifier.on('timeout', function(notifierObject, options) {
+        //     // Triggers if `wait: true` and notification closes
+        // });
     })
 
     // Exit cleanly on request from parent process in development mode.

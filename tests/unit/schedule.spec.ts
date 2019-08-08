@@ -48,9 +48,9 @@ describe('Schedule', () => {
 
     it('tomorrow as tmr 9am', () => {
         const now = new Date();
-        const s = parseSchedule('tomorrow hello world', now);
+        const s = parseSchedule('tomorrow haha', now);
         expect(s).toBeTruthy();
-        expect(s!.task).toEqual("hello world");
+        expect(s!.task).toEqual("haha");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(9));
     });
 
@@ -154,4 +154,5 @@ describe('Schedule', () => {
         expect(s!.task).toEqual("buy grocery");
         expect(s!.due).toEqual(Date.today().addDays(1).addHours(17));
     });
+
 });
