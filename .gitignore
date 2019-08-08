@@ -7,3 +7,5 @@ temp/
 dist_electron/
 *.sqlite
 *.db
+*.zip
+*.tgz
