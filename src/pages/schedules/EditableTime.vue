@@ -118,6 +118,13 @@ export default Vue.extend({
             }
           },
           {
+            text: '下周一',
+            onClick(picker: DatePicker) {
+              const nextMonday = Date.today().next().monday().addHours(9);
+              picker.$emit('pick', nextMonday);
+            }
+          },
+          {
             text: '一周之后',
             onClick(picker: DatePicker) {
               const now = new Date();

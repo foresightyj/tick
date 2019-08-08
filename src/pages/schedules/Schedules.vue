@@ -11,6 +11,7 @@
       <div v-if="section.schedules.length">
         <h3>{{section.title}}</h3>
         <el-table
+          row-key="id"
           :data="section.schedules"
           style="width: 100%"
           :row-class-name="tableRowClassName"

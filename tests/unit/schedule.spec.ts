@@ -46,6 +46,14 @@ describe('Schedule', () => {
         expect(s!.due).toEqual(new Date(now.getTime()).addHours(2));
     })
 
+    it("3d", () => {
+        const now = new Date();
+        const s = parseSchedule('3d hello world', now);
+        expect(s).toBeTruthy();
+        expect(s!.task).toEqual("hello world");
+        expect(s!.due).toEqual(new Date(now.getTime()).addDays(3));
+    })
+
     it('tomorrow as tmr 9am', () => {
         const now = new Date();
         const s = parseSchedule('tomorrow haha', now);
