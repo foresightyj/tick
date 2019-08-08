@@ -72,7 +72,7 @@ export default Vue.extend({
     }
   },
   data() {
-    const minutesLater = [1, 5, 10, 15, 30, 45].map(m => (
+    const minutesLater = [5, 10, 20, 30].map(m => (
       {
         text: `${m}分钟后`,
         onClick(picker: DatePicker) {
@@ -83,7 +83,7 @@ export default Vue.extend({
       }
     ));
 
-    const hoursLater = [1, 2, 3, 6].map(h => (
+    const hoursLater = [1, 3, 6].map(h => (
       {
         text: `${h}小时后`,
         onClick(picker: DatePicker) {
