@@ -122,9 +122,10 @@ assert(scheduler, "scheduler is falsy");
 interface Section {
   title: string,
   badgeType: "primary" | "warning" | "danger" | "info" | "success" | undefined,
-  background: string,
   schedules: Schedule[]
 }
+
+const comparisonFunc = (a: Schedule, b: Schedule) => a.due.getTime() - b.due.getTime();
 
 export default Vue.extend({
   name: "app",
@@ -148,36 +149,47 @@ export default Vue.extend({
     return {
       schedule_filter: "",
       schedules: [] as Schedule[],
-      activeName: 'Today',
+      _activeName: "Today" as string,
     };
   },
   computed: {
+    activeName: {
+      get(): string {
+        if (this.sections.find(s => s.title === this._activeName)) return this._activeName;
+        if (this.sections[0]) return this.sections[0].title;
+        return "Today";
+      },
+      set(name: string) {
+        this._activeName = name;
+      }
+    },
     searchFilter(): Input {
       const i = this.$refs.searchFilter;
       assert(i, '$refs.searchFilter is falsy');
       return i as Input;
     },
     sections(): Section[] {
-      let startOfToday = moment().startOf('day').toDate()
-      let startOf3DaysAgo = moment().subtract(3, 'days').startOf('day').toDate()
-      let startOfTomorrow = moment().add(1, 'days').startOf('day').toDate()
-      let startOfTheDayAfterTomorrow = moment().add(1, 'days').startOf('day').toDate()
-
-      let schedules_Today = this.schedules.filter(s => s.due >= startOfToday && s.due < startOfTomorrow);
-      let schedules_Tomorrow = this.schedules.filter(s => s.due >= startOfTomorrow && s.due < startOfTheDayAfterTomorrow);
-      let schedules_TheDayAfterTomorrow = this.schedules.filter(s => s.due >= startOfTheDayAfterTomorrow);
-      let schedules_InPast3Days = this.schedules.filter(s => s.due >= startOf3DaysAgo && s.due < startOfToday);
-      let schedules_MoreThan3DaysAgo = this.schedules.filter(s => s.due < startOf3DaysAgo);
-
       if (this.schedule_filter) {
-        schedules_Today = schedules_Today.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
-        schedules_Tomorrow = schedules_Tomorrow.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
-        schedules_TheDayAfterTomorrow = schedules_TheDayAfterTomorrow.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
-        schedules_InPast3Days = schedules_InPast3Days.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
-        schedules_MoreThan3DaysAgo = schedules_MoreThan3DaysAgo.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
+        const filtered = this.schedules.filter(s => decodeURI(s.task).toLowerCase().includes(this.schedule_filter.toLowerCase()));
+        filtered.sort(comparisonFunc);
+        return [{
+          title: 'Search Results',
+          badgeType: undefined,
+          schedules: filtered,
+        } as Section];
       }
 
-      const comparisonFunc = (a: Schedule, b: Schedule) => a.due.getTime() - b.due.getTime();
+      const startOfToday = moment().startOf('day').toDate()
+      const startOf3DaysAgo = moment().subtract(3, 'days').startOf('day').toDate()
+      const startOfTomorrow = moment().add(1, 'days').startOf('day').toDate()
+      const startOfTheDayAfterTomorrow = moment().add(1, 'days').startOf('day').toDate()
+
+      const schedules_Today = this.schedules.filter(s => s.due >= startOfToday && s.due < startOfTomorrow);
+      const schedules_Tomorrow = this.schedules.filter(s => s.due >= startOfTomorrow && s.due < startOfTheDayAfterTomorrow);
+      const schedules_TheDayAfterTomorrow = this.schedules.filter(s => s.due >= startOfTheDayAfterTomorrow);
+      const schedules_InPast3Days = this.schedules.filter(s => s.due >= startOf3DaysAgo && s.due < startOfToday);
+      const schedules_MoreThan3DaysAgo = this.schedules.filter(s => s.due < startOf3DaysAgo);
+
       schedules_Today.sort(comparisonFunc);
       schedules_Tomorrow.sort(comparisonFunc);
       schedules_TheDayAfterTomorrow.sort(comparisonFunc);
@@ -187,31 +199,26 @@ export default Vue.extend({
       const res: Section[] = [{
         title: 'Today',
         badgeType: undefined,
-        background: '#f0ffff',
         schedules: schedules_Today
       } as Section,
       {
         title: 'Tomorrow',
         badgeType: "primary",
-        background: '#f2f2f2',
         schedules: schedules_Tomorrow
       } as Section,
       {
         title: 'Upcoming',
         badgeType: "success",
-        background: '#f2f2f2',
         schedules: schedules_TheDayAfterTomorrow
       } as Section,
       {
         title: 'Past 3 days',
         badgeType: "warning",
-        background: '#f2f2f2',
         schedules: schedules_InPast3Days
       } as Section,
       {
         title: 'Due past but uncompleted',
         badgeType: "warning",
-        background: '#f2f2f2',
         schedules: schedules_MoreThan3DaysAgo
       } as Section].filter(s => s.schedules.length);
       return res;
