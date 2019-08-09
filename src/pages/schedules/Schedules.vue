@@ -7,9 +7,18 @@
       placeholder="Search tasks..."
       autofocus
     />
-    <div v-for="section in sections" :key="section.title">
-      <div v-if="section.schedules.length">
-        <h3>{{section.title}}</h3>
+    <Help />
+    <br />
+    <br />
+    <el-tabs v-model="activeName" type="border-card">
+      <el-tab-pane v-for="section in sections" :key="section.title" :name="section.title">
+        <span slot="label">
+          <el-badge :value="section.schedules.length" class="item" :type="section.badgeType">
+            <i class="el-icon-date"></i>
+            {{section.title}}
+          </el-badge>
+        </span>
+
         <el-table
           row-key="id"
           :data="section.schedules"
@@ -64,11 +73,31 @@
             </template>
           </el-table-column>
         </el-table>
-      </div>
-    </div>
-    <Help />
+      </el-tab-pane>
+    </el-tabs>
   </div>
 </template>
+
+<style lang="scss">
+.el-table .warning-row {
+  background: oldlace;
+}
+
+.el-table .success-row {
+  background: #f0f9eb;
+}
+.search-filter {
+  padding: 0 50px 0 150px;
+  width: 400px;
+  margin: 0 auto;
+}
+
+.el-badge__content.is-fixed {
+  top: 10px;
+  right: 4px;
+  line-height: 16px;
+}
+</style>
 
 <script lang="ts">
 import assert from "assert";
@@ -84,7 +113,7 @@ import Help from "./Help.vue";
 
 require("../../scheduler/extendDateJs");
 
-import { Button, Table, TableColumn, Input, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message } from "element-ui";
+import { Button, Table, TableColumn, Input, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message, Tabs, TabPane, Badge } from "element-ui";
 import { rowCallbackParams } from "element-ui/types/table";
 import { ipcMain } from 'electron';
 
@@ -93,6 +122,7 @@ assert(scheduler, "scheduler is falsy");
 
 interface Section {
   title: string,
+  badgeType: "primary" | "warning" | "danger" | "info" | "success" | undefined,
   background: string,
   schedules: Schedule[]
 }
@@ -107,6 +137,9 @@ export default Vue.extend({
     [DropdownMenu.name]: DropdownMenu,
     [DropdownItem.name]: DropdownItem,
     [Dropdown.name]: Dropdown,
+    [Tabs.name]: Tabs,
+    [TabPane.name]: TabPane,
+    [Badge.name]: Badge,
     EditableInput,
     EditableTime,
     Help,
@@ -116,7 +149,7 @@ export default Vue.extend({
     return {
       schedule_filter: "",
       schedules: [] as Schedule[],
-
+      activeName: 'Today',
     };
   },
   computed: {
@@ -152,35 +185,42 @@ export default Vue.extend({
       schedules_InPast3Days.sort(comparisonFunc);
       schedules_MoreThan3DaysAgo.sort(comparisonFunc);
 
-      return [{
+      const res: Section[] = [{
         title: 'Today',
+        badgeType: undefined,
         background: '#f0ffff',
         schedules: schedules_Today
-      },
+      } as Section,
       {
         title: 'Tomorrow',
+        badgeType: "primary",
         background: '#f2f2f2',
         schedules: schedules_Tomorrow
-      },
+      } as Section,
       {
         title: 'Upcoming',
+        badgeType: "success",
         background: '#f2f2f2',
         schedules: schedules_TheDayAfterTomorrow
-      },
+      } as Section,
       {
         title: 'Past 3 days',
+        badgeType: "warning",
         background: '#f2f2f2',
         schedules: schedules_InPast3Days
-      },
+      } as Section,
       {
         title: 'Due past but uncompleted',
+        badgeType: "warning",
         background: '#f2f2f2',
         schedules: schedules_MoreThan3DaysAgo
-      }];
+      } as Section].filter(s => s.schedules.length);
+      return res;
     }
   },
   async mounted() {
     window.addEventListener("keyup", (e: KeyboardEvent) => {
+      console.log('code', e.key, e.keyCode, e.code);
       if (e.code === "Escape") {
         if (this.schedule_filter) {
           this.schedule_filter = "";
@@ -188,8 +228,20 @@ export default Vue.extend({
           ipcRenderer.send("schedules-escape");
         }
       } else if (e.code === "KeyF" && e.ctrlKey && !e.altKey && !e.shiftKey) {
-        console.log(this.searchFilter);
         this.searchFilter.focus();
+      } else if ("1234567890".includes(e.key) && !e.ctrlKey && e.altKey && !e.shiftKey) {
+        const key = parseInt(e.key, 10);
+        let section: Section | undefined;
+        if (key === 9) {
+          //last section
+          section = this.sections[this.sections.length - 1];
+        }
+        else {
+          section = this.sections[key - 1];
+        }
+        if (section) {
+          this.activeName = section.title;
+        }
       }
     }, true);
     const schedules = await scheduler.list();
@@ -198,13 +250,15 @@ export default Vue.extend({
     scheduler.addListener("added", this.onScheduleAdded);
     scheduler.addListener("due_updated", this.onScheduleUpdated);
     scheduler.addListener("task_updated", this.onScheduleUpdated);
+    scheduler.addListener("link_titles_updated", this.onScheduleUpdated);
     scheduler.addListener("completed", this.onScheduleUpdated);
   },
   destroyed() {
     scheduler.removeListener("added", this.onScheduleAdded);
     scheduler.removeListener("due_updated", this.onScheduleUpdated);
     scheduler.removeListener("task_updated", this.onScheduleUpdated);
-    scheduler.addListener("completed", this.onScheduleUpdated);
+    scheduler.removeListener("link_titles_updated", this.onScheduleUpdated);
+    scheduler.removeListener("completed", this.onScheduleUpdated);
   },
   methods: {
     onScheduleAdded(schedule: Schedule) {
@@ -268,18 +322,3 @@ export default Vue.extend({
   }
 });
 </script>
-
-<style lang="scss">
-.el-table .warning-row {
-  background: oldlace;
-}
-
-.el-table .success-row {
-  background: #f0f9eb;
-}
-.search-filter {
-  padding: 0 100px;
-  width: 400px;
-  margin: 0 auto;
-}
-</style>

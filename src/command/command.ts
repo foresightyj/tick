@@ -3,13 +3,6 @@
 // All of the Node.js APIs are available in this process.
 import { ipcRenderer } from 'electron';
 
-// console.log(ipcRenderer.sendSync('synchronous-message', 'ping')) // prints "pong"
-
-// ipcRenderer.on('asynchronous-reply', (event, arg) => {
-//   console.log(arg) // prints "pong"
-// })
-// ipcRenderer.send('asynchronous-message', 'ping')
-
 const command = document.querySelector('#command') as HTMLInputElement;
 
 command.focus();

@@ -86,7 +86,6 @@ function createScheduleListWindow() {
             if (!process.env.IS_TEST) { scheduleListWindow.webContents.openDevTools() }
         } else {
             // Load the index.html when not in development
-            // console.log('load url');
             scheduleListWindow.loadURL('app://./schedules.html');
             scheduleListWindow.webContents.openDevTools()
         }
@@ -146,7 +145,6 @@ function createCommandWindow() {
     } else {
         createProtocol('app');
         // Load the index.html when not in development
-        // console.log('load url');
         commandWindow.loadURL('app://./command.html');
     }
 

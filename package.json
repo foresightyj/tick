@@ -29,6 +29,7 @@
     "reflect-metadata": "^0.1.10"
   },
   "devDependencies": {
+    "@types/cheerio": "^0.22.12",
     "@types/jest": "^23.1.4",
     "@types/lodash": "^4.14.136",
     "@types/node": "^8.0.29",
@@ -37,7 +38,9 @@
     "@vue/cli-plugin-unit-jest": "^3.9.0",
     "@vue/cli-service": "^3.9.0",
     "@vue/test-utils": "1.0.0-beta.29",
+    "axios": "^0.19.0",
     "babel-core": "7.0.0-bridge.0",
+    "cheerio": "^1.0.0-rc.3",
     "electron": "^5.0.8",
     "electron-builder": "^21.2.0",
     "electron-context-menu": "^0.13.0",

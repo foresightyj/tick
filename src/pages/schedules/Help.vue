@@ -2,9 +2,22 @@
   <el-popover placement="right" width="400" trigger="hover">
     <div>
       <section>
-        <h5>快捷方式</h5>
+        <h5>全局快捷键</h5>
         <ul>
           <li>ctrl+s: 打开命令窗口</li>
+        </ul>
+      </section>
+      <section>
+        <h5>命令窗口快捷键</h5>
+        <ul>
+          <li>ctrl+l: 打开列表窗口</li>
+        </ul>
+      </section>
+      <section>
+        <h5>列表窗口快捷键</h5>
+        <ul>
+          <li>alt+1, alt+2, ...: 切换到列表窗口的第n个Tab</li>
+          <li>alt+9: 切换到列表窗口的第后一个Tab</li>
         </ul>
       </section>
       <section>

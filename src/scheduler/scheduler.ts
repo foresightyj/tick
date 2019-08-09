@@ -4,20 +4,19 @@ import * as winston from "winston";
 
 import { Schedule } from "../entity/Schedule";
 import ScheduleRepository from "../repositories/ScheduleRepository";
-
 import EventEmitter from 'events';
 import { Connection } from 'typeorm';
 
 export class Scheduler extends EventEmitter {
     private static readonly supported_events = ['initialized', 'scheduled',
         'schedule_due_time_passed', 'due', 'added', 'removed',
-        'due_updated', 'task_updated', 'completed', 'recovered', 'error',
+        'link_titles_updated', 'due_updated', 'task_updated', 'completed', 'recovered', 'error',
     ];
     private readonly _timerMap: { [k: string]: NodeJS.Timer } = {};
 
     private readonly _scheduleRepo: Promise<ScheduleRepository>;
 
-    constructor(conn:Promise<Connection>) {
+    constructor(conn: Promise<Connection>) {
         super();
         this._scheduleRepo = conn.then(c => c.getCustomRepository(ScheduleRepository));
     }

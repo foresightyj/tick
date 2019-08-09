@@ -41,6 +41,7 @@ import { Input } from "element-ui";
 const { shell } = require('electron');
 import "./ClickOutside";
 import assert from "assert";
+import { urlReplacer } from "../../utils";
 
 export default Vue.extend({
   components: {
@@ -63,12 +64,17 @@ export default Vue.extend({
     }
   },
   methods: {
-    onClick: function (e: KeyboardEvent) {
+    urlify(text: string) {
+      return urlReplacer(text, url => {
+        const replacement = decodeURI(url);
+        return `<a href="${url}" title="Ctrl+click或者Alt+click在默认浏览器中打开">${replacement}</a>`
+      });
+    },
+    onClick(e: KeyboardEvent) {
       const target = e.target as HTMLElement;
       if (e.ctrlKey || e.altKey) {
         if (target.tagName === 'A') {
           const t = target as HTMLAnchorElement;
-          console.log("clicked :" + t.href)
           shell.openExternal(t.href)
         }
       } else if (!this.disabled) {
@@ -81,13 +87,6 @@ export default Vue.extend({
     },
     onChange(val: string) {
       this.isEditing = false;
-    },
-    urlify: function (text: string) {
-      var urlRegex = /(https?:\/\/[^\s]+)/g
-      var html = text.replace(urlRegex, function (url) {
-        return '<a href="' + url + '" title="Ctrl+click或者Alt+click在默认浏览器中打开">' + decodeURI(url) + '</a>'
-      })
-      return html;
     },
     onClickOutside: function (e: MouseEvent) {
       const descEl = this.$refs.editableDescription;
