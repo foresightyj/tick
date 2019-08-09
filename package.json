@@ -18,7 +18,7 @@
     "rebuildSqlite3": "npx electron-rebuild -f -v 1.4.13 -e ./node_modules/electron-prebuilt -w sqlite3",
     "rebuild": "npx electron-rebuild -f -v 5.0.8 -w sqlite3",
     "pack": "rm -rf //192.168.0.228/huohuoshared/软件/dist_electron/ && cp -r dist_electron //192.168.0.228/huohuoshared/软件/",
-    "postpack": "rm -f dist_electron.zip && 7z a dist_electron.zip dist_electron && mv dist_electron.zip /e/Nutstore2/",
+    "postpack": "rm -f tick_dist.zip && 7z a tick_dist.zip dist_electron && mv tick_dist.zip /e/Nutstore2/",
     "buildpack": "yarn electron:build && yarn pack"
   },
   "main": "background.js",

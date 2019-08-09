@@ -69,7 +69,7 @@ export default Vue.extend({
       required: true,
       type: Date as Prop<Date>
     },
-    iconClass:{
+    iconClass: {
       required: true,
       type: String as Prop<string>
     },
