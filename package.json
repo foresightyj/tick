@@ -27,6 +27,7 @@
     "datejs": "^1.0.0-rc3",
     "sqlite3": "^4.0.9",
     "vue": "^2.6.10",
+    "vuex": "^3.0.1",
     "reflect-metadata": "^0.1.10"
   },
   "devDependencies": {
