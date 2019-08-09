@@ -1,7 +1,7 @@
 <template>
   <span>
     <strong
-      class="editable-description"
+      class="editable-time-description"
       ref="editableDescription"
       :class="{'editable-disabled': disabled}"
       v-on:click.prevent="onClick"
@@ -30,7 +30,7 @@
 </template>
 
 <style lang="scss">
-.editable-description {
+.editable-time-description {
   display: inline-block;
   width: 100%;
 }

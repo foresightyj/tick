@@ -6,7 +6,7 @@
       :class="{'editable-disabled': disabled}"
       v-show="!isEditing"
       v-on:click.prevent="onClick"
-      v-html="urlify(value)"
+      v-html="urlify(value) || '&nbsp;'"
       v-bind:title="value"
     ></span>
     <el-input
@@ -25,6 +25,7 @@
 <style lang="scss">
 .editable-description {
   display: inline-block;
+  min-width: 100px;
   width: 100%;
 }
 
