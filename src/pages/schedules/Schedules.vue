@@ -101,23 +101,21 @@
 <script lang="ts">
 import assert from "assert";
 import Vue from "vue";
+import { mapState } from "vuex";
 import "element-ui/lib/theme-chalk/index.css";
-import { Scheduler } from "../../scheduler/Scheduler";
 import { Schedule } from "../../entity/Schedule";
 const { ipcRenderer, remote } = require("electron");
 import moment from "moment";
 import EditableInput from "./EditableInput.vue";
 import EditableTime from "./EditableTime.vue";
 import Help from "./Help.vue";
-
 require("../../scheduler/extendDateJs");
+import { IStoreState } from "../../store/store";
 
 import { Button, Table, TableColumn, Input, Dropdown, DropdownItem, DropdownMenu, MessageBox, Message, Tabs, TabPane, Badge } from "element-ui";
 import { rowCallbackParams } from "element-ui/types/table";
 import { ipcMain } from 'electron';
 
-const scheduler = remote.getGlobal("scheduler") as Scheduler;
-assert(scheduler, "scheduler is falsy");
 
 interface Section {
   title: string,
@@ -143,31 +141,35 @@ export default Vue.extend({
     EditableTime,
     Help,
   },
-
   data() {
     return {
       schedule_filter: "",
-      schedules: [] as Schedule[],
       activeName: 'Today',
     };
   },
   computed: {
+    storeState(): IStoreState {
+      const s = this.$store.state;
+      assert(s, 'store.state is falsy');
+      return s;
+    },
     searchFilter(): Input {
       const i = this.$refs.searchFilter;
       assert(i, '$refs.searchFilter is falsy');
       return i as Input;
     },
     sections(): Section[] {
+      const schedules = this.storeState.schedules;
       let startOfToday = moment().startOf('day').toDate()
       let startOf3DaysAgo = moment().subtract(3, 'days').startOf('day').toDate()
       let startOfTomorrow = moment().add(1, 'days').startOf('day').toDate()
       let startOfTheDayAfterTomorrow = moment().add(1, 'days').startOf('day').toDate()
 
-      let schedules_Today = this.schedules.filter(s => s.due >= startOfToday && s.due < startOfTomorrow);
-      let schedules_Tomorrow = this.schedules.filter(s => s.due >= startOfTomorrow && s.due < startOfTheDayAfterTomorrow);
-      let schedules_TheDayAfterTomorrow = this.schedules.filter(s => s.due >= startOfTheDayAfterTomorrow);
-      let schedules_InPast3Days = this.schedules.filter(s => s.due >= startOf3DaysAgo && s.due < startOfToday);
-      let schedules_MoreThan3DaysAgo = this.schedules.filter(s => s.due < startOf3DaysAgo);
+      let schedules_Today = schedules.filter(s => s.due >= startOfToday && s.due < startOfTomorrow);
+      let schedules_Tomorrow = schedules.filter(s => s.due >= startOfTomorrow && s.due < startOfTheDayAfterTomorrow);
+      let schedules_TheDayAfterTomorrow = schedules.filter(s => s.due >= startOfTheDayAfterTomorrow);
+      let schedules_InPast3Days = schedules.filter(s => s.due >= startOf3DaysAgo && s.due < startOfToday);
+      let schedules_MoreThan3DaysAgo = schedules.filter(s => s.due < startOf3DaysAgo);
 
       if (this.schedule_filter) {
         schedules_Today = schedules_Today.filter(s => decodeURI(s.task).toLowerCase().indexOf(this.schedule_filter.toLowerCase()) > -1);
@@ -219,7 +221,6 @@ export default Vue.extend({
   },
   async mounted() {
     window.addEventListener("keyup", (e: KeyboardEvent) => {
-      console.log('code', e.key, e.keyCode, e.code);
       if (e.code === "Escape") {
         if (this.schedule_filter) {
           this.schedule_filter = "";
@@ -244,8 +245,6 @@ export default Vue.extend({
       }
     }, true);
     const schedules = await scheduler.list();
-    this.schedules = schedules;
-    console.log("schedules", schedules);
     scheduler.addListener("added", this.onScheduleAdded);
     scheduler.addListener("due_updated", this.onScheduleUpdated);
     scheduler.addListener("task_updated", this.onScheduleUpdated);
@@ -262,7 +261,7 @@ export default Vue.extend({
   methods: {
     onScheduleAdded(schedule: Schedule) {
       assert(schedule);
-      this.schedules.push(schedule);
+      schedules.push(schedule);
     },
     onScheduleUpdated(schedule: Schedule) {
       assert(schedule);
