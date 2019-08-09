@@ -18,18 +18,17 @@
             {{section.title}}
           </el-badge>
         </span>
-
         <el-table
           row-key="id"
           :data="section.schedules"
           style="width: 100%"
           :row-class-name="tableRowClassName"
-          stripe
         >
           <el-table-column label="期限" width="160">
             <template slot-scope="scope">
               <EditableTime
                 :disabled="scope.row.completed"
+                :iconClass="!scope.row.isDue?'el-icon-time':'el-icon-timer'"
                 :value="scope.row.due"
                 @input="onDueChanged(scope.row, $event)"
               />
@@ -273,13 +272,12 @@ export default Vue.extend({
       }
     },
     tableRowClassName(row: rowCallbackParams) {
-      const section = row.row as Section;
-      if (row.rowIndex === 1) {
+      const schedule = row.row as Schedule;
+      if (schedule.isDue) {
         return "warning-row";
-      } else if (row.rowIndex === 3) {
+      } else {
         return "success-row";
       }
-      return "";
     },
     onDueChanged(schedule: Schedule, event: Date) {
       assert(schedule);

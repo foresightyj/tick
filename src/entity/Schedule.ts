@@ -34,6 +34,9 @@ export class Schedule {
     get delta() {
         return (this.due.getTime() - new Date().getTime()) / 1000;
     }
+    get isDue(){
+        return this.due < new Date();
+    }
     get friendlyDelta() {
         const delta = this.delta;
         return delta < 3600 ? (Math.floor(delta / 60) + " min") : (Math.floor(delta / 3600) + " hr " + (Math.floor(delta % 3600 / 60) + " min"))

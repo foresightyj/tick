@@ -8,7 +8,7 @@
       v-show="!isEditing"
       :title="friendlyLongTime"
     >
-      <i class="el-icon-time"></i>
+      <i :class="iconClass"></i>
       {{value | formatDate}}
     </strong>
     <el-date-picker
@@ -68,6 +68,10 @@ export default Vue.extend({
     value: {
       required: true,
       type: Date as Prop<Date>
+    },
+    iconClass:{
+      required: true,
+      type: String as Prop<string>
     },
     disabled: {
       required: false,
