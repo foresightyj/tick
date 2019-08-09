@@ -94,7 +94,7 @@
 
 .el-badge__content.is-fixed {
   top: 10px;
-  right: 4px;
+  right: 6px;
   line-height: 16px;
 }
 </style>
