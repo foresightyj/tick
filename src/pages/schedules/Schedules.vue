@@ -109,6 +109,7 @@ import moment from "moment";
 import EditableInput from "./EditableInput.vue";
 import EditableTime from "./EditableTime.vue";
 import Help from "./Help.vue";
+import { debounce } from "lodash";
 
 require("../../scheduler/extendDateJs");
 
@@ -292,11 +293,19 @@ export default Vue.extend({
       this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, schedule);
       scheduler.update_due(schedule);
     },
-    async onTaskChanged(schedule: Schedule, event: string) {
+    debouncedScheduleUpdate: debounce(async (schedule: Schedule) => {
+    //   console.log('updating: ', schedule.task);
+      return await scheduler.update_task(schedule);
+    }, 300),
+    onTaskChanged(schedule: Schedule, event: string) {
       assert(schedule);
       schedule.task = event;
-      const s = await scheduler.update_task(schedule);
-      this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
+      const p = this.debouncedScheduleUpdate(schedule);
+      if (p) {
+        p.then(s => {
+          this.schedules.splice(this.schedules.findIndex(s => s.id === schedule.id), 1, s);
+        });
+      }
     },
     async onRemove(schedule: Schedule, event: MouseEvent) {
       const noConfirm = event.ctrlKey || event.altKey;
