@@ -12,7 +12,7 @@
     "postinstall": "electron-builder install-app-deps",
     "postuninstall": "electron-builder install-app-deps",
     "test:unit": "vue-cli-service test:unit",
-    "test":"yarn test:unit",
+    "test": "yarn test:unit",
     "start": "ts-node src/testorm.ts",
     "fixPython": "npm config set python C:\\Users\\Administrator\\.windows-build-tools\\python27\\python.exe",
     "rebuildSqlite3": "npx electron-rebuild -f -v 1.4.13 -e ./node_modules/electron-prebuilt -w sqlite3",
